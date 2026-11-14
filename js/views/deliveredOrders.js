@@ -13,7 +13,13 @@ export function renderDeliveredOrdersView(container, state, { onRefreshOrders })
   const searchQuery = String(state.deliveredSearchQuery || '');
   const techMap = new Map((technicians || []).map((t) => [String(t.id), t]));
 
-  const deliveredOrders = orders.filter((o) => o.estado === 'Entregado');
+  const deliveredOrders = orders
+    .filter((o) => o.estado === 'Entregado')
+    .sort((a, b) => {
+      const dateA = new Date(a.fecha_entrega || a.fecha_ingreso || 0).getTime();
+      const dateB = new Date(b.fecha_entrega || b.fecha_ingreso || 0).getTime();
+      return dateB - dateA;
+    });
   const q = searchQuery.trim().toLowerCase();
 
   const filtered = deliveredOrders.filter((order) => {
@@ -137,8 +143,11 @@ function renderDeliveredCard(order, techMap) {
           </div>
           <div>
             <h3 class="text-lg font-black text-slate-900 leading-tight">${escapeHtml(order.cliente_nombre)}</h3>
-            <p class="text-sm font-bold text-slate-500">
+            <p class="text-xs sm:text-sm font-bold text-slate-500">
               📞 ${escapeHtml(order.cliente_telefono)} · Ingreso: ${escapeHtml(formatDateTime(order.fecha_ingreso))}
+            </p>
+            <p class="text-xs sm:text-sm font-extrabold text-emerald-800 mt-0.5">
+              📅 Entregado: ${order.fecha_entrega ? escapeHtml(formatDateTime(order.fecha_entrega)) : 'Sin fecha registrada'}
             </p>
           </div>
         </div>
@@ -209,3 +218,4 @@ function renderDeliveredCard(order, techMap) {
     </article>
   `;
 }
+

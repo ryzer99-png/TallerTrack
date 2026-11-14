@@ -117,6 +117,16 @@ export async function renderPublicOrderView(container, orderId) {
               <dt class="text-xs font-bold uppercase text-slate-500">Fecha de Ingreso</dt>
               <dd class="font-bold text-slate-900">${escapeHtml(formatDateTime(order.fecha_ingreso))}</dd>
             </div>
+            ${
+              order.estado === 'Entregado' && order.fecha_entrega
+                ? `
+            <div class="sm:col-span-2">
+              <dt class="text-xs font-bold uppercase text-emerald-700">Fecha de Entrega</dt>
+              <dd class="font-extrabold text-emerald-900">${escapeHtml(formatDateTime(order.fecha_entrega))}</dd>
+            </div>
+            `
+                : ''
+            }
             <div>
               <dt class="text-xs font-bold uppercase text-slate-500">Equipo</dt>
               <dd class="font-extrabold text-slate-900">${escapeHtml(order.tipo_equipo)}</dd>

@@ -208,24 +208,48 @@ export async function createOrder(payload) {
 }
 
 export async function updateOrder(id, patch) {
+  const nextPatch = { ...patch };
+  if (nextPatch.estado === 'Entregado' && nextPatch.fecha_entrega === undefined) {
+    nextPatch.fecha_entrega = new Date().toISOString();
+  } else if (nextPatch.estado && nextPatch.estado !== 'Entregado' && nextPatch.fecha_entrega === undefined) {
+    nextPatch.fecha_entrega = null;
+  }
+
   const supabase = getSupabaseClient();
   if (!supabase) {
     const orders = readDemoOrders();
     const idx = orders.findIndex((o) => String(o.id) === String(id));
     if (idx === -1) throw new Error('Orden no encontrada en modo demo.');
-    orders[idx] = { ...orders[idx], ...patch };
+    orders[idx] = { ...orders[idx], ...nextPatch };
     writeDemoOrders(orders);
     return orders[idx];
   }
 
   const { data, error } = await supabase
     .from('ordenes')
-    .update(patch)
+    .update(nextPatch)
     .eq('id', id)
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // Fallback si aún no se ejecutó migration_fecha_entrega.sql
+    if (
+      String(error.message || '').includes('fecha_entrega') &&
+      Object.prototype.hasOwnProperty.call(nextPatch, 'fecha_entrega')
+    ) {
+      const { fecha_entrega: _ignored, ...restPatch } = nextPatch;
+      const retry = await supabase
+        .from('ordenes')
+        .update(restPatch)
+        .eq('id', id)
+        .select()
+        .single();
+      if (retry.error) throw retry.error;
+      return retry.data;
+    }
+    throw error;
+  }
   return data;
 }
 
