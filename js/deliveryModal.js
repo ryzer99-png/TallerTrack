@@ -44,9 +44,9 @@ export function openDeliveryConfirmModal(order, { onConfirmed } = {}) {
           <textarea
             id="delivery-observaciones"
             rows="3"
-            placeholder="Ej: Se entrega probado, garantía 30 días, sin control remoto..."
+            placeholder="Ej: Se entregó a otra persona (nombre/parentesco), probado en mesón, sin control... (opcional)"
             class="w-full rounded-xl border border-slate-300 px-3.5 py-2.5 text-sm text-slate-900 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 outline-none"
-          >${escapeHtml(order.observaciones || '')}</textarea>
+          ></textarea>
         </div>
 
         <div class="flex gap-2 justify-end pt-1">
@@ -88,13 +88,19 @@ export function openDeliveryConfirmModal(order, { onConfirmed } = {}) {
   const submitBtn = document.getElementById('btn-confirm-delivery');
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const observaciones = textarea?.value.trim() || null;
+    const deliveryNote = textarea?.value.trim() || '';
     if (submitBtn) {
       submitBtn.disabled = true;
       submitBtn.textContent = 'Entregando...';
     }
     try {
-      await updateOrder(order.id, { estado: 'Entregado', observaciones });
+      const patch = { estado: 'Entregado' };
+      if (deliveryNote) {
+        patch.observaciones = order.observaciones
+          ? `${order.observaciones}\nEntrega: ${deliveryNote}`
+          : `Entrega: ${deliveryNote}`;
+      }
+      await updateOrder(order.id, patch);
       closeModal();
       showToast(`Orden #${order.numero_orden} marcada como Entregada`);
       await onConfirmed?.();
@@ -108,3 +114,4 @@ export function openDeliveryConfirmModal(order, { onConfirmed } = {}) {
     }
   });
 }
+
