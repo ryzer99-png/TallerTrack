@@ -4,6 +4,7 @@ import {
   isSupabaseConfigured,
   saveLocalEnvOverrides,
 } from './config.js';
+import { openGlobalSearchModal } from './globalSearchModal.js';
 import { listOrders, listTechnicians, subscribeToOrders } from './ordersService.js';
 import { escapeHtml, showToast } from './utils.js';
 import { renderActiveOrdersView } from './views/activeOrders.js';
@@ -38,6 +39,7 @@ const deliveredCountBadge = document.getElementById('delivered-count-badge');
 const connectionBadge = document.getElementById('connection-badge');
 const demoBanner = document.getElementById('demo-banner');
 const openConfigBtn = document.getElementById('open-config-btn');
+const openGlobalSearchBtn = document.getElementById('open-global-search-btn');
 
 function parseRoute() {
   const { pathname, search, hash } = window.location;
@@ -301,6 +303,15 @@ navPendientesBtn?.addEventListener('click', () => navigateTo('pendientes'));
 navActivasBtn?.addEventListener('click', () => navigateTo('activas'));
 navEntregadosBtn?.addEventListener('click', () => navigateTo('entregados'));
 openConfigBtn?.addEventListener('click', openSupabaseConfigModal);
+openGlobalSearchBtn?.addEventListener('click', () => {
+  openGlobalSearchModal(state, { onNavigate: navigateTo });
+});
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && state.currentView !== 'publica') {
+    e.preventDefault();
+    openGlobalSearchModal(state, { onNavigate: navigateTo });
+  }
+});
 window.addEventListener('hashchange', handleRouteChange);
 window.addEventListener('popstate', handleRouteChange);
 
