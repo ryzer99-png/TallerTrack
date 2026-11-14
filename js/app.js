@@ -140,6 +140,11 @@ function updateHeaderUI() {
 function renderCurrentView() {
   updateHeaderUI();
 
+  appRoot.className =
+    state.currentView === 'pendientes'
+      ? 'w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-4 pb-28 sm:pb-8'
+      : 'w-full max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28 sm:pb-16';
+
   if (state.currentView === 'publica') {
     renderPublicOrderView(appRoot, state.publicOrderId);
     return;

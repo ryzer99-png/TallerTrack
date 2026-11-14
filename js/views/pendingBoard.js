@@ -1,38 +1,62 @@
 import { openDeliveryConfirmModal } from '../deliveryModal.js';
 import { createTechnician, updateOrder } from '../ordersService.js';
-import { escapeHtml, getAgeMeta, showToast } from '../utils.js';
+import { escapeHtml, showToast } from '../utils.js';
 import { buildStatusWhatsAppUrl } from '../whatsapp.js';
 
 const BOARD_COLUMNS = [
   {
     estado: 'Recibido',
     title: 'Recibidos / Por Revisar',
-    accentClass: 'border-t-slate-600',
+    dotClass: 'bg-slate-500',
     nextEstado: 'En Revisión',
     nextLabel: '→ En Revisión',
   },
   {
     estado: 'En Revisión',
     title: 'En Reparación',
-    accentClass: 'border-t-blue-600',
+    dotClass: 'bg-blue-600',
     nextEstado: 'Reparado',
     nextLabel: '→ Listo',
   },
   {
     estado: 'Por Aprobar',
     title: 'Esperando Repuesto / Aprob.',
-    accentClass: 'border-t-amber-500',
+    dotClass: 'bg-amber-500',
     nextEstado: 'Reparado',
     nextLabel: '→ Listo',
   },
   {
     estado: 'Reparado',
     title: 'Listo para Entrega',
-    accentClass: 'border-t-emerald-600',
+    dotClass: 'bg-emerald-600',
     nextEstado: 'Entregado',
     nextLabel: '→ Entregado',
   },
 ];
+
+function getSoberAgeBadge(isoString) {
+  if (!isoString) {
+    return { label: 'Hoy', badgeClass: 'bg-slate-100 text-slate-600' };
+  }
+  const ms = Date.now() - new Date(isoString).getTime();
+  const days = Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+  if (days >= 6) {
+    return {
+      label: `${days} días`,
+      badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200 font-semibold',
+    };
+  }
+  if (days >= 3) {
+    return {
+      label: `${days} días`,
+      badgeClass: 'bg-amber-50 text-amber-700 border border-amber-200',
+    };
+  }
+  return {
+    label: days === 0 ? 'Hoy' : days === 1 ? '1 día' : `${days} días`,
+    badgeClass: 'bg-slate-100 text-slate-600',
+  };
+}
 
 export function renderPendingBoardView(container, state, { onRefreshOrders }) {
   const { orders, technicians, selectedTechnicianFilter, isLoading } = state;
@@ -67,20 +91,20 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
   });
 
   const kpis = [
-    { label: 'Total en Taller', value: filteredOrders.length, tone: 'text-slate-900 bg-white border-slate-200' },
-    { label: 'Por Diagnosticar', value: filteredOrders.filter((o) => o.estado === 'Recibido').length, tone: 'text-slate-800 bg-slate-50 border-slate-200' },
+    { label: 'Total en Taller', value: filteredOrders.length, accent: 'border-t-blue-600' },
+    { label: 'Por Diagnosticar', value: filteredOrders.filter((o) => o.estado === 'Recibido').length, accent: 'border-t-amber-500' },
     {
       label: 'En Reparación / Espera',
       value: filteredOrders.filter((o) => o.estado === 'En Revisión' || o.estado === 'Por Aprobar').length,
-      tone: 'text-blue-900 bg-blue-50/70 border-blue-200',
+      accent: 'border-t-indigo-600',
     },
-    { label: 'Listos para Entrega', value: filteredOrders.filter((o) => o.estado === 'Reparado').length, tone: 'text-emerald-900 bg-emerald-50/70 border-emerald-200' },
+    { label: 'Listos para Entrega', value: filteredOrders.filter((o) => o.estado === 'Reparado').length, accent: 'border-t-emerald-600' },
   ];
 
   container.innerHTML = `
     <section class="space-y-4">
       <!-- A. Filtro rápido por Técnico + Buscador para alto volumen -->
-      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-lg shadow-slate-300/30 p-3 sm:p-4 space-y-3">
+      <div class="bg-white rounded-xl border border-slate-200/80 shadow-sm p-3 sm:p-4 space-y-3">
         <div class="flex flex-nowrap items-center gap-2 overflow-x-auto no-scrollbar py-1 scroll-smooth snap-x snap-mandatory">
           <button
             type="button"
@@ -161,37 +185,43 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
       </div>
 
       <!-- B. Tarjetas de Resumen Rápido (KPIs) -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
         ${kpis
           .map(
             (k) => `
-          <div class="rounded-xl border p-3.5 shadow-sm ${k.tone}">
-            <span class="block text-[11px] font-extrabold uppercase tracking-wider opacity-75">${escapeHtml(k.label)}</span>
-            <span class="text-2xl sm:text-3xl font-black font-mono mt-0.5 block">${k.value}</span>
+          <div class="bg-white border border-slate-200/80 border-t-4 ${k.accent} rounded-xl p-3.5 sm:p-4 shadow-sm">
+            <span class="block text-[11px] sm:text-xs font-semibold uppercase text-slate-500 tracking-wider">${escapeHtml(k.label)}</span>
+            <span class="text-2xl lg:text-3xl font-extrabold font-mono text-slate-800 mt-1 block">${k.value}</span>
           </div>
         `
           )
           .join('')}
       </div>
 
-      <!-- C. Tablero de Estados (4 columnas) -->
+      <!-- C. Tablero de Estados (4 columnas full-width con scroll independiente en desktop) -->
       ${
         isLoading
-          ? '<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center font-bold text-slate-600">Cargando tablero del taller...</div>'
-          : `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+          ? '<div class="bg-white rounded-xl border border-slate-200 p-8 text-center font-bold text-slate-600">Cargando tablero del taller...</div>'
+          : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
               ${BOARD_COLUMNS.map((col) => {
                 const colOrders = filteredOrders.filter((o) => o.estado === col.estado);
                 return `
-                  <div class="bg-white/80 rounded-2xl border border-slate-200/90 border-t-4 ${col.accentClass} shadow-sm p-3 space-y-3">
+                  <div
+                    data-drop-estado="${escapeHtml(col.estado)}"
+                    class="bg-slate-100/80 rounded-xl p-3 border border-slate-200/60 flex flex-col transition-all duration-150"
+                  >
                     <div class="flex items-center justify-between gap-2 px-1">
-                      <h3 class="text-xs font-black uppercase tracking-wider text-slate-700">${escapeHtml(col.title)}</h3>
-                      <span class="px-2 py-0.5 rounded-full bg-slate-200 text-slate-800 font-mono text-xs font-extrabold">${colOrders.length}</span>
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-2 h-2 rounded-full shrink-0 ${col.dotClass}"></span>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-700 truncate">${escapeHtml(col.title)}</h3>
+                      </div>
+                      <span class="px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 font-mono text-xs font-extrabold shrink-0">${colOrders.length}</span>
                     </div>
 
                     ${
                       colOrders.length === 0
-                        ? '<p class="text-xs font-semibold text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl">Sin equipos</p>'
-                        : `<div class="space-y-2.5 xl:max-h-[68vh] xl:overflow-y-auto pr-0.5">
+                        ? '<p class="text-xs font-semibold text-slate-400 text-center py-8 mt-3 border border-dashed border-slate-300/70 rounded-xl bg-white/40">Sin equipos</p>'
+                        : `<div class="lg:max-h-[calc(100vh-295px)] lg:overflow-y-auto scrollbar-thin pr-1 mt-3 space-y-2.5">
                             ${colOrders.map((o) => renderWorkCard(o, col, technicians, techMap)).join('')}
                           </div>`
                     }
@@ -270,49 +300,97 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
       }
     });
   });
+
+  // Drag-and-drop HTML5 nativo entre columnas en escritorio
+  container.querySelectorAll('[data-drag-order-id]').forEach((card) => {
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', card.dataset.dragOrderId);
+      e.dataTransfer.effectAllowed = 'move';
+      card.classList.add('opacity-50');
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('opacity-50');
+    });
+  });
+
+  container.querySelectorAll('[data-drop-estado]').forEach((colEl) => {
+    colEl.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      colEl.classList.add('ring-2', 'ring-blue-400', 'bg-blue-50/40');
+    });
+    colEl.addEventListener('dragleave', (e) => {
+      if (!colEl.contains(e.relatedTarget)) {
+        colEl.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50/40');
+      }
+    });
+    colEl.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      colEl.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50/40');
+      const orderId = e.dataTransfer.getData('text/plain');
+      const targetEstado = colEl.dataset.dropEstado;
+      if (!orderId || !targetEstado) return;
+      const order = activeOrders.find((o) => String(o.id) === String(orderId));
+      if (!order || order.estado === targetEstado) return;
+
+      try {
+        await updateOrder(orderId, { estado: targetEstado });
+        showToast(`Orden #${order.numero_orden} movida a "${targetEstado}"`);
+        await onRefreshOrders?.();
+      } catch (err) {
+        showToast(`Error al mover: ${err.message}`, 'error');
+      }
+    });
+  });
 }
 
 function renderWorkCard(order, col, technicians, techMap) {
-  const age = getAgeMeta(order.fecha_ingreso);
+  const age = getSoberAgeBadge(order.fecha_ingreso);
   const tech = order.tecnico_id ? techMap.get(String(order.tecnico_id)) : null;
   const isUrgent = order.prioridad === 'Urgente / Garantía';
   const waUrl = buildStatusWhatsAppUrl(order);
 
   return `
-    <article class="bg-white rounded-xl border ${isUrgent ? 'border-red-300 ring-1 ring-red-200' : 'border-slate-200'} shadow-sm p-3 space-y-2.5">
-      <!-- N° Orden + Urgente + Semáforo antigüedad -->
+    <article
+      draggable="true"
+      data-drag-order-id="${escapeHtml(order.id)}"
+      class="bg-white rounded-xl border ${isUrgent ? 'border-rose-300 ring-1 ring-rose-200' : 'border-slate-200'} p-3.5 shadow-sm hover:shadow-md transition-shadow duration-150 space-y-2.5 cursor-grab active:cursor-grabbing"
+    >
+      <!-- Cabecera: N° Orden + Urgente + Antigüedad sobria -->
       <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5">
-          <span class="px-2 py-0.5 rounded-lg bg-slate-900 text-white font-mono font-black text-base tracking-tight">
-            #${escapeHtml(order.numero_orden)}
-          </span>
+        <span class="font-mono font-extrabold text-base text-slate-900 tracking-tight">
+          #${escapeHtml(order.numero_orden)}
+        </span>
+        <div class="flex items-center gap-1.5 flex-wrap justify-end">
           ${
             isUrgent
-              ? '<span class="px-1.5 py-0.5 rounded-md bg-red-100 text-red-800 border border-red-300 text-[10px] font-black uppercase">⚡ Urgente</span>'
+              ? '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold uppercase">⚡ Urgente</span>'
               : ''
           }
+          <span class="px-2 py-0.5 rounded-md text-[11px] font-medium ${age.badgeClass}">
+            ${escapeHtml(age.label)}
+          </span>
         </div>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-bold ${age.badgeClass}">
-          <span class="w-1.5 h-1.5 rounded-full ${age.dotClass}"></span>
-          ${escapeHtml(age.label)}
-        </span>
       </div>
 
-      <!-- Equipo, falla y cliente -->
-      <div class="space-y-0.5">
-        <p class="font-extrabold text-sm text-slate-900 leading-snug">${escapeHtml(order.tipo_equipo)}</p>
-        <p class="text-xs font-semibold text-slate-600 line-clamp-2">${escapeHtml(order.falla_reportada)}</p>
-        <p class="text-xs font-bold text-slate-500 pt-0.5">👤 ${escapeHtml(order.cliente_nombre)}</p>
+      <!-- Cuerpo: Equipo, falla y cliente -->
+      <div class="space-y-1">
+        <p class="font-bold text-slate-900 text-sm leading-snug">${escapeHtml(order.tipo_equipo)}</p>
+        <p class="text-xs text-slate-600 line-clamp-2">${escapeHtml(order.falla_reportada)}</p>
+        <p class="text-xs text-slate-500 font-medium flex items-center gap-1.5 pt-0.5">
+          <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span class="truncate">${escapeHtml(order.cliente_nombre)}</span>
+        </p>
       </div>
 
-      <!-- Reasignación de técnico en 1 toque -->
-      <div class="flex items-center gap-1.5">
+      <!-- Selector compacto de técnico -->
+      <div class="flex items-center gap-2 px-2.5 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-slate-100/80 transition-colors">
         <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${escapeHtml(tech?.color || '#94a3b8')}"></span>
         <select
           data-action="reassign-tech"
           data-id="${escapeHtml(order.id)}"
           aria-label="Asignar técnico"
-          class="w-full min-h-[44px] px-2.5 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm font-bold text-slate-800 focus:border-blue-600 focus:outline-none"
+          class="w-full min-h-[44px] sm:min-h-[34px] py-1 bg-transparent text-xs font-semibold text-slate-700 focus:outline-none cursor-pointer"
         >
           <option value="" ${!order.tecnico_id ? 'selected' : ''}>Sin Asignar</option>
           ${technicians
@@ -323,14 +401,14 @@ function renderWorkCard(order, col, technicians, techMap) {
         </select>
       </div>
 
-      <!-- Acciones directas -->
-      <div class="flex items-center gap-1.5 pt-1">
+      <!-- Footer de acción rápida -->
+      <div class="flex items-center gap-2 pt-0.5">
         <button
           type="button"
           data-action="advance-status"
           data-id="${escapeHtml(order.id)}"
           data-next-estado="${escapeHtml(col.nextEstado)}"
-          class="touch-btn min-h-[44px] flex-1 py-2 px-2.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm text-center transition-colors"
+          class="touch-btn min-h-[44px] sm:min-h-[34px] flex-1 py-1.5 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
         >
           ${escapeHtml(col.nextLabel)}
         </button>
@@ -340,9 +418,11 @@ function renderWorkCard(order, col, technicians, techMap) {
           rel="noopener noreferrer"
           title="Avisar por WhatsApp"
           aria-label="Avisar por WhatsApp"
-          class="touch-btn min-h-[44px] min-w-[44px] py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center transition-colors"
+          class="w-11 h-11 sm:w-8 sm:h-8 shrink-0 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg flex items-center justify-center transition-colors border border-emerald-200"
         >
-          📲
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
         </a>
       </div>
     </article>
