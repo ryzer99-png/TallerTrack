@@ -331,13 +331,13 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
           <button
             type="button"
             data-eq-suggestion="${escapeHtml(item)}"
-              isExact
-            ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
-            : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
-      }"
-      >
-      ${escapeHtml(item)}
-          </button >
+            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border font-semibold text-sm transition-colors duration-150 ${isExact
+                ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
+                : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
+            }"
+          >
+            ${escapeHtml(item)}
+          </button>
         `;
       })
       .join('');
