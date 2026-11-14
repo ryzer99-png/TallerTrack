@@ -313,7 +313,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
     eqTray.classList.toggle('hidden', !isEquipmentTrayOpen);
     toggleEqTrayBtn.setAttribute('aria-expanded', isEquipmentTrayOpen ? 'true' : 'false');
     toggleEqTrayBtn.className = isEquipmentTrayOpen
-      ?'shrink-0 px-3 py-2 rounded-lg border border-blue-700 bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150 shadow-sm'
+      ? 'shrink-0 px-3 py-2 rounded-lg border border-blue-700 bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150 shadow-sm'
       : 'shrink-0 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150';
 
     if (!isEquipmentTrayOpen) return;
@@ -336,7 +336,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
             : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
       }"
       >
-      ${ escapeHtml(item) }
+      ${escapeHtml(item)}
           </button >
         `;
       })
@@ -363,7 +363,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
           ? 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
           : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-indigo-700 text-white border-indigo-800 shadow-sm'
         : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50';
-      btn.innerHTML = active ? `${ checkIcon } < span > ${ escapeHtml(acc) }</span > ` : ` < span > ${ escapeHtml(acc) }</span > `;
+      btn.innerHTML = active ? `${checkIcon}${escapeHtml(acc)}` : escapeHtml(acc);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
@@ -454,7 +454,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
       if (!current) {
         faultInput.value = text;
       } else if (!current.toLowerCase().includes(text.toLowerCase())) {
-        faultInput.value = `${ current }, ${ text }`;
+        faultInput.value = `${current}, ${text}`;
       }
       faultInput.focus();
     });
@@ -520,7 +520,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
       });
     } catch (err) {
       console.error('Error al registrar orden:', err);
-      showToast(`Error al guardar: ${ err.message || 'Verifica Supabase' }`, 'error');
+      showToast(`Error al guardar: ${err.message || 'Verifica Supabase'}`, 'error');
     } finally {
       isSubmitting = false;
       submitBtn.disabled = false;
