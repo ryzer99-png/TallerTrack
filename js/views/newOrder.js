@@ -2,19 +2,24 @@ import { createOrder } from '../ordersService.js';
 import { escapeHtml, getPublicOrderUrl, showToast } from '../utils.js';
 import { buildReceiptWhatsAppUrl } from '../whatsapp.js';
 
-const EQUIPMENT_OPTIONS = [
-  { id: 'TV LCD/LED', label: '📺 TV LCD / LED' },
-  { id: 'Equipo de Sonido', label: '🔊 Sonido' },
-  { id: 'Tarjeta Electrónica', label: '🔌 Tarjeta' },
-  { id: 'Microondas', label: '♨️ Microondas' },
-  { id: 'Otro', label: '🛠️ Otro' },
+const EQUIPMENT_SUGGESTIONS = [
+  'TV LCD/LED',
+  'Equipo Sonido',
+  'Microondas',
+  'Consola',
+  'Tarjeta Electrónica',
+  'Tarjeta Nevera',
+  'Amplificador',
+  'Pequeño Electrodoméstico',
 ];
 
 const ACCESSORY_OPTIONS = [
   'Sin accesorios',
-  'Control',
   'Cable de poder',
-  'Cargador/Adaptador',
+  'Control remoto',
+  'Adaptador / Cargador',
+  'Batería',
+  'Bases / Patas',
 ];
 
 const FAULT_CHIPS = [
@@ -24,10 +29,28 @@ const FAULT_CHIPS = [
   'En corto',
 ];
 
+function buildAccessoriesPayload(selectedTags, detailText) {
+  const cleanDetail = detailText.trim();
+  const activeTags = Array.from(selectedTags).filter((t) => t !== 'Sin accesorios');
+
+  if (selectedTags.has('Sin accesorios') && !cleanDetail) {
+    return 'Ninguno';
+  }
+  if (activeTags.length > 0 && cleanDetail) {
+    return `${activeTags.join(', ')}. Detalle: ${cleanDetail}`;
+  }
+  if (activeTags.length > 0) {
+    return activeTags.join(', ');
+  }
+  if (cleanDetail) {
+    return `Detalle: ${cleanDetail}`;
+  }
+  return 'Ninguno';
+}
+
 export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) {
-  let selectedEquipment = 'TV LCD/LED';
-  let customEquipment = '';
   let selectedAccessories = new Set(['Sin accesorios']);
+  let isEquipmentTrayOpen = false;
   let isSubmitting = false;
 
   container.innerHTML = `
@@ -43,47 +66,91 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
       </div>
 
       <form id="new-order-form" class="space-y-6" novalidate>
-        <!-- 1. Tipo de Equipo -->
-        <div>
-          <label class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-2.5">
-            1. Tipo de Equipo
+        <!-- 1. Tipo de Equipo (Input inteligente + botón Rápidos al lado) -->
+        <div id="equipment-field-wrap" class="relative">
+          <label for="tipo-equipo-input" class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-2">
+            1. Tipo de Equipo *
           </label>
-          <div id="equipment-chips" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-            ${EQUIPMENT_OPTIONS.map((opt) => `
+
+          <!-- Sugerencias rápidas compactas encima del input (horizontal en móvil, wrap en tablet/PC) -->
+          <div
+            id="equipment-suggestions-tray"
+            class="hidden mb-2.5 p-2.5 sm:p-3 rounded-2xl border-2 border-blue-300 bg-slate-50 shadow-sm space-y-2"
+          >
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-black uppercase tracking-wider text-blue-900">
+                Toca para elegir o desliza →
+              </span>
               <button
+                id="close-equipment-tray-btn"
                 type="button"
-                data-equipment="${escapeHtml(opt.id)}"
-                class="touch-chip px-3 py-3 rounded-xl border-2 font-extrabold text-base sm:text-lg text-center flex items-center justify-center"
+                class="text-xs font-black text-slate-700 hover:text-slate-900 px-2.5 py-1 rounded-lg bg-slate-200"
               >
-                ${escapeHtml(opt.label)}
+                Ocultar
               </button>
-            `).join('')}
+            </div>
+            <div id="equipment-suggestions-list" class="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 pb-1 sm:flex-wrap sm:overflow-visible"></div>
           </div>
-          <div id="custom-equipment-wrap" class="hidden mt-3">
-            <input
-              id="custom-equipment-input"
-              type="text"
-              placeholder="Especifica el equipo (ej: Licuadora, Amplificador, Consola...)"
-              class="w-full px-4 py-3.5 text-lg font-semibold rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none bg-white"
-            />
+
+          <div class="flex items-stretch gap-2">
+            <div class="relative flex-1 flex items-center">
+              <input
+                id="tipo-equipo-input"
+                name="tipo_equipo"
+                type="text"
+                required
+                autocomplete="off"
+                placeholder="Ej: TV LCD/LED, Air Fryer Oster, Consola PS4..."
+                class="w-full pl-4 pr-11 py-3.5 text-base sm:text-lg font-bold rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none bg-white"
+              />
+              <button
+                id="clear-equipment-btn"
+                type="button"
+                aria-label="Limpiar tipo de equipo"
+                class="hidden absolute right-2 w-9 h-9 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-black text-base flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+            <button
+              id="toggle-equipment-tray-btn"
+              type="button"
+              aria-expanded="false"
+              class="touch-btn shrink-0 px-3.5 sm:px-4 py-3.5 rounded-xl border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-900 font-extrabold text-sm sm:text-base flex items-center justify-center gap-1"
+            >
+              <span>⚡ Rápidos</span>
+            </button>
           </div>
         </div>
 
-        <!-- 2. Accesorios -->
-        <div>
-          <label class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-2.5">
+        <!-- 2. Accesorios Recibidos (Multi-tag acumulable + detalle libre) -->
+        <div class="space-y-3">
+          <label class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800">
             2. Accesorios Recibidos
           </label>
-          <div id="accessory-chips" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div id="accessory-chips" class="flex flex-wrap gap-2.5">
             ${ACCESSORY_OPTIONS.map((acc) => `
               <button
                 type="button"
                 data-accessory="${escapeHtml(acc)}"
-                class="touch-chip px-3 py-3 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center"
+                class="touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5"
               >
                 ${escapeHtml(acc)}
               </button>
             `).join('')}
+          </div>
+          <div>
+            <label for="accesorios-detalle-input" class="block text-xs sm:text-sm font-extrabold uppercase tracking-wide text-slate-700 mb-1.5">
+              Otros accesorios o detalles:
+            </label>
+            <input
+              id="accesorios-detalle-input"
+              name="accesorios_detalle"
+              type="text"
+              autocomplete="off"
+              placeholder="Ej: incluye estuche, cable HDMI, adaptador 12V..."
+              class="w-full px-4 py-3 text-base sm:text-lg font-semibold rounded-xl border-2 border-slate-300 focus:border-blue-600 focus:outline-none bg-slate-50 focus:bg-white"
+            />
           </div>
         </div>
 
@@ -176,48 +243,134 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
   `;
 
   const form = container.querySelector('#new-order-form');
-  const eqButtons = container.querySelectorAll('[data-equipment]');
-  const customEqWrap = container.querySelector('#custom-equipment-wrap');
-  const customEqInput = container.querySelector('#custom-equipment-input');
+  const eqFieldWrap = container.querySelector('#equipment-field-wrap');
+  const eqInput = container.querySelector('#tipo-equipo-input');
+  const toggleEqTrayBtn = container.querySelector('#toggle-equipment-tray-btn');
+  const clearEqBtn = container.querySelector('#clear-equipment-btn');
+  const eqTray = container.querySelector('#equipment-suggestions-tray');
+  const eqSuggestionsList = container.querySelector('#equipment-suggestions-list');
+  const closeEqTrayBtn = container.querySelector('#close-equipment-tray-btn');
   const accButtons = container.querySelectorAll('[data-accessory]');
+  const accDetailInput = container.querySelector('#accesorios-detalle-input');
   const faultButtons = container.querySelectorAll('[data-fault]');
   const faultInput = container.querySelector('#falla-reportada');
   const submitBtn = container.querySelector('#submit-order-btn');
 
   function syncEquipmentUI() {
-    eqButtons.forEach((btn) => {
-      const active = btn.dataset.equipment === selectedEquipment;
-      btn.className = active
-        ? 'touch-chip px-3 py-3 rounded-xl border-2 font-extrabold text-base sm:text-lg text-center flex items-center justify-center bg-blue-700 text-white border-blue-900 shadow-md'
-        : 'touch-chip px-3 py-3 rounded-xl border-2 font-extrabold text-base sm:text-lg text-center flex items-center justify-center bg-slate-50 text-slate-900 border-slate-300 hover:border-slate-500';
+    const query = eqInput.value.trim();
+    clearEqBtn.classList.toggle('hidden', query.length === 0);
+    eqTray.classList.toggle('hidden', !isEquipmentTrayOpen);
+    toggleEqTrayBtn.setAttribute('aria-expanded', isEquipmentTrayOpen ? 'true' : 'false');
+    toggleEqTrayBtn.className = isEquipmentTrayOpen
+      ? 'touch-btn shrink-0 px-3.5 sm:px-4 py-3.5 rounded-xl border-2 border-blue-700 bg-blue-700 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-1'
+      : 'touch-btn shrink-0 px-3.5 sm:px-4 py-3.5 rounded-xl border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-900 font-extrabold text-sm sm:text-base flex items-center justify-center gap-1';
+
+    if (!isEquipmentTrayOpen) return;
+
+    const qLower = query.toLowerCase();
+    const matches = qLower
+      ? EQUIPMENT_SUGGESTIONS.filter((item) => item.toLowerCase().includes(qLower))
+      : EQUIPMENT_SUGGESTIONS;
+    const listToRender = matches.length > 0 ? matches : EQUIPMENT_SUGGESTIONS;
+
+    eqSuggestionsList.innerHTML = listToRender
+      .map((item) => {
+        const isExact = item.toLowerCase() === qLower;
+        return `
+          <button
+            type="button"
+            data-eq-suggestion="${escapeHtml(item)}"
+            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border-2 font-extrabold text-sm sm:text-base transition-colors ${
+              isExact
+                ? 'bg-blue-700 text-white border-blue-900 shadow-sm'
+                : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
+            }"
+          >
+            ${escapeHtml(item)}
+          </button>
+        `;
+      })
+      .join('');
+
+    // Usar click (y no pointerdown) evita selecciones accidentales al hacer scroll en móvil
+    eqSuggestionsList.querySelectorAll('[data-eq-suggestion]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        eqInput.value = btn.dataset.eqSuggestion;
+        isEquipmentTrayOpen = false;
+        syncEquipmentUI();
+      });
     });
-    customEqWrap.classList.toggle('hidden', selectedEquipment !== 'Otro');
   }
 
   function syncAccessoriesUI() {
     accButtons.forEach((btn) => {
-      const active = selectedAccessories.has(btn.dataset.accessory);
+      const acc = btn.dataset.accessory;
+      const active = selectedAccessories.has(acc);
+      const isNone = acc === 'Sin accesorios';
       btn.className = active
-        ? 'touch-chip px-3 py-3 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center bg-slate-900 text-white border-slate-900 shadow-sm'
-        : 'touch-chip px-3 py-3 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center bg-slate-50 text-slate-800 border-slate-300 hover:border-slate-500';
+        ? isNone
+          ? 'touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
+          : 'touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5 bg-blue-700 text-white border-blue-900 shadow-sm'
+        : 'touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5 bg-slate-50 text-slate-800 border-slate-300 hover:border-slate-500';
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
 
-  eqButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      selectedEquipment = btn.dataset.equipment;
-      syncEquipmentUI();
-      if (selectedEquipment === 'Otro') {
-        customEqInput.focus();
-      }
-    });
+  function resetFormState() {
+    form.reset();
+    eqInput.value = '';
+    accDetailInput.value = '';
+    isEquipmentTrayOpen = false;
+    selectedAccessories = new Set(['Sin accesorios']);
+    container.querySelector('#observaciones').value = 'Revisar y cotizar antes de reparar';
+    syncEquipmentUI();
+    syncAccessoriesUI();
+  }
+
+  toggleEqTrayBtn.addEventListener('click', () => {
+    isEquipmentTrayOpen = !isEquipmentTrayOpen;
+    syncEquipmentUI();
   });
+
+  eqInput.addEventListener('input', () => {
+    const qLower = eqInput.value.trim().toLowerCase();
+    const hasMatches =
+      qLower.length > 0 &&
+      EQUIPMENT_SUGGESTIONS.some((item) => item.toLowerCase().includes(qLower));
+    isEquipmentTrayOpen = hasMatches;
+    syncEquipmentUI();
+  });
+
+  clearEqBtn.addEventListener('click', () => {
+    eqInput.value = '';
+    isEquipmentTrayOpen = false;
+    syncEquipmentUI();
+    eqInput.focus();
+  });
+
+  closeEqTrayBtn.addEventListener('click', () => {
+    isEquipmentTrayOpen = false;
+    syncEquipmentUI();
+  });
+
+  const onOutsidePointerDown = (e) => {
+    if (!document.body.contains(eqFieldWrap)) {
+      document.removeEventListener('pointerdown', onOutsidePointerDown);
+      return;
+    }
+    if (isEquipmentTrayOpen && !eqFieldWrap.contains(e.target)) {
+      isEquipmentTrayOpen = false;
+      syncEquipmentUI();
+    }
+  };
+  document.addEventListener('pointerdown', onOutsidePointerDown);
 
   accButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const acc = btn.dataset.accessory;
       if (acc === 'Sin accesorios') {
         selectedAccessories = new Set(['Sin accesorios']);
+        accDetailInput.value = '';
       } else {
         selectedAccessories.delete('Sin accesorios');
         if (selectedAccessories.has(acc)) {
@@ -225,12 +378,21 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
         } else {
           selectedAccessories.add(acc);
         }
-        if (selectedAccessories.size === 0) {
+        if (selectedAccessories.size === 0 && !accDetailInput.value.trim()) {
           selectedAccessories.add('Sin accesorios');
         }
       }
       syncAccessoriesUI();
     });
+  });
+
+  accDetailInput.addEventListener('input', () => {
+    if (accDetailInput.value.trim()) {
+      selectedAccessories.delete('Sin accesorios');
+    } else if (selectedAccessories.size === 0) {
+      selectedAccessories.add('Sin accesorios');
+    }
+    syncAccessoriesUI();
   });
 
   faultButtons.forEach((btn) => {
@@ -253,11 +415,17 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
     e.preventDefault();
     if (isSubmitting) return;
 
+    const finalEquipment = eqInput.value.trim();
     const clienteNombre = container.querySelector('#cliente-nombre').value.trim();
     const clienteTelefono = container.querySelector('#cliente-telefono').value.trim();
     const fallaReportada = faultInput.value.trim();
     const observaciones = container.querySelector('#observaciones').value.trim() || 'Revisar y cotizar antes de reparar';
 
+    if (!finalEquipment) {
+      showToast('Indica el tipo de equipo', 'error');
+      eqInput.focus();
+      return;
+    }
     if (!clienteNombre) {
       showToast('Falta el nombre del cliente', 'error');
       container.querySelector('#cliente-nombre').focus();
@@ -274,13 +442,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
       return;
     }
 
-    customEquipment = customEqInput.value.trim();
-    const finalEquipment =
-      selectedEquipment === 'Otro' && customEquipment ? customEquipment : selectedEquipment;
-
-    const accesoriosText = selectedAccessories.has('Sin accesorios')
-      ? 'Ninguno'
-      : Array.from(selectedAccessories).join(', ');
+    const accesoriosText = buildAccessoriesPayload(selectedAccessories, accDetailInput.value);
 
     isSubmitting = true;
     submitBtn.disabled = true;
@@ -296,16 +458,11 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
         observaciones,
       });
 
+      resetFormState();
       onOrderCreated?.(created);
       showOrderConfirmationModal(created, {
         onCreateAnother: () => {
-          form.reset();
-          selectedEquipment = 'TV LCD/LED';
-          selectedAccessories = new Set(['Sin accesorios']);
-          container.querySelector('#observaciones').value = 'Revisar y cotizar antes de reparar';
-          syncEquipmentUI();
-          syncAccessoriesUI();
-          container.querySelector('#cliente-nombre').focus();
+          eqInput.focus();
         },
         onGoToActive,
       });
