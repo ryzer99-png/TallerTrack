@@ -11,12 +11,10 @@ import { buildStatusWhatsAppUrl } from '../whatsapp.js';
 
 const FILTER_OPTIONS = [
   { id: 'Activas', label: 'En Taller (Activas)' },
-  { id: 'Todas', label: 'Todas' },
   { id: 'Recibido', label: 'Recibido' },
   { id: 'En Revisión', label: 'En Revisión' },
   { id: 'Por Aprobar', label: 'Por Aprobar' },
   { id: 'Reparado', label: 'Reparado' },
-  { id: 'Entregado', label: 'Entregado' },
 ];
 
 const QUICK_STATUS_BUTTONS = [
@@ -30,14 +28,11 @@ export function renderActiveOrdersView(container, state, { onRefreshOrders }) {
   const { orders, searchQuery, statusFilter, isLoading } = state;
 
   const filtered = orders.filter((order) => {
-    if (statusFilter === 'Activas' && order.estado === 'Entregado') {
+    // Los entregados pasan automáticamente al módulo "Entregados"
+    if (order.estado === 'Entregado') {
       return false;
     }
-    if (
-      statusFilter !== 'Activas' &&
-      statusFilter !== 'Todas' &&
-      order.estado !== statusFilter
-    ) {
+    if (statusFilter !== 'Activas' && order.estado !== statusFilter) {
       return false;
     }
 

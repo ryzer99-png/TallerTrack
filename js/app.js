@@ -7,18 +7,20 @@ import {
 import { listOrders, listTechnicians, subscribeToOrders } from './ordersService.js';
 import { escapeHtml, showToast } from './utils.js';
 import { renderActiveOrdersView } from './views/activeOrders.js';
+import { renderDeliveredOrdersView } from './views/deliveredOrders.js';
 import { renderNewOrderView } from './views/newOrder.js';
 import { renderPendingBoardView } from './views/pendingBoard.js';
 import { renderPublicOrderView } from './views/publicOrder.js';
 
 const state = {
-  currentView: 'nueva', // 'nueva' | 'pendientes' | 'activas' | 'publica'
+  currentView: 'nueva', // 'nueva' | 'pendientes' | 'activas' | 'entregados' | 'publica'
   publicOrderId: null,
   orders: [],
   technicians: [],
   selectedTechnicianFilter: 'all',
   isLoading: false,
   searchQuery: '',
+  deliveredSearchQuery: '',
   statusFilter: 'Activas',
   realtimeStatus: 'connecting',
 };
@@ -30,7 +32,9 @@ const headerEl = document.getElementById('workshop-header');
 const navNuevaBtn = document.getElementById('nav-nueva');
 const navPendientesBtn = document.getElementById('nav-pendientes');
 const navActivasBtn = document.getElementById('nav-activas');
+const navEntregadosBtn = document.getElementById('nav-entregados');
 const activeCountBadge = document.getElementById('active-count-badge');
+const deliveredCountBadge = document.getElementById('delivered-count-badge');
 const connectionBadge = document.getElementById('connection-badge');
 const demoBanner = document.getElementById('demo-banner');
 const openConfigBtn = document.getElementById('open-config-btn');
@@ -58,6 +62,10 @@ function parseRoute() {
     return { view: 'pendientes', publicOrderId: null };
   }
 
+  if (hash === '#/entregados') {
+    return { view: 'entregados', publicOrderId: null };
+  }
+
   return { view: 'nueva', publicOrderId: null };
 }
 
@@ -65,6 +73,7 @@ function navigateTo(view) {
   const hashMap = {
     activas: '#/activas',
     pendientes: '#/pendientes',
+    entregados: '#/entregados',
     nueva: '#/nueva',
   };
   const targetHash = hashMap[view] || '#/nueva';
@@ -82,25 +91,34 @@ function updateHeaderUI() {
   if (isPublic) return;
 
   const inactiveTabClass =
-    'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all duration-150';
+    'touch-btn flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all duration-150';
 
   navNuevaBtn.className =
     state.currentView === 'nueva'
-      ? 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm transition-all duration-150'
+      ? 'touch-btn flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow-sm transition-all duration-150'
       : inactiveTabClass;
 
   navPendientesBtn.className =
     state.currentView === 'pendientes'
-      ? 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-sm transition-all duration-150'
+      ? 'touch-btn flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow-sm transition-all duration-150'
       : inactiveTabClass;
 
   navActivasBtn.className =
     state.currentView === 'activas'
-      ? 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-blue-600 text-white shadow-sm transition-all duration-150'
+      ? 'touch-btn flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-blue-600 text-white shadow-sm transition-all duration-150'
+      : inactiveTabClass;
+
+  navEntregadosBtn.className =
+    state.currentView === 'entregados'
+      ? 'touch-btn flex-1 sm:flex-none px-3 sm:px-3.5 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 bg-slate-600 text-white shadow-sm transition-all duration-150'
       : inactiveTabClass;
 
   const activeCount = state.orders.filter((o) => o.estado !== 'Entregado').length;
+  const deliveredCount = state.orders.length - activeCount;
   activeCountBadge.textContent = String(activeCount);
+  if (deliveredCountBadge) {
+    deliveredCountBadge.textContent = String(deliveredCount);
+  }
 
   demoBanner.classList.toggle('hidden', isSupabaseConfigured());
 
@@ -136,6 +154,13 @@ function renderCurrentView() {
     return;
   }
 
+  if (state.currentView === 'entregados') {
+    renderDeliveredOrdersView(appRoot, state, {
+      onRefreshOrders: loadOrders,
+    });
+    return;
+  }
+
   renderNewOrderView(appRoot, {
     technicians: state.technicians,
     onOrderCreated: () => {
@@ -150,7 +175,11 @@ function renderCurrentView() {
 async function loadOrders() {
   const prevTechCount = state.technicians.length;
   state.isLoading = true;
-  if (state.currentView === 'activas' || state.currentView === 'pendientes') {
+  if (
+    state.currentView === 'activas' ||
+    state.currentView === 'pendientes' ||
+    state.currentView === 'entregados'
+  ) {
     renderCurrentView();
   }
   try {
@@ -166,6 +195,7 @@ async function loadOrders() {
     if (
       state.currentView === 'activas' ||
       state.currentView === 'pendientes' ||
+      state.currentView === 'entregados' ||
       (state.currentView === 'nueva' && prevTechCount !== state.technicians.length)
     ) {
       renderCurrentView();
@@ -269,6 +299,7 @@ function openSupabaseConfigModal() {
 navNuevaBtn?.addEventListener('click', () => navigateTo('nueva'));
 navPendientesBtn?.addEventListener('click', () => navigateTo('pendientes'));
 navActivasBtn?.addEventListener('click', () => navigateTo('activas'));
+navEntregadosBtn?.addEventListener('click', () => navigateTo('entregados'));
 openConfigBtn?.addEventListener('click', openSupabaseConfigModal);
 window.addEventListener('hashchange', handleRouteChange);
 window.addEventListener('popstate', handleRouteChange);
