@@ -89,22 +89,40 @@ export async function listOrders() {
     .from('ordenes')
     .select('*')
     .order('numero_orden', { ascending: false })
-    .limit(200);
+    .limit(500);
 
   if (error) throw error;
   return data || [];
 }
 
+const DEMO_TECHS_KEY = 'teleradio_demo_techs_v1';
+
 const DEFAULT_DEMO_TECHNICIANS = [
-  { id: 'tech-papa', nombre: 'Papá', color: '#1d4ed8', activo: true },
-  { id: 'tech-2', nombre: 'Técnico 2', color: '#0f766e', activo: true },
-  { id: 'tech-3', nombre: 'Técnico 3', color: '#7c3aed', activo: true },
+  { id: 'tech-rogelio', nombre: 'Rogelio', color: '#1d4ed8', activo: true },
+  { id: 'tech-juan-david', nombre: 'Juan David', color: '#0f766e', activo: true },
+  { id: 'tech-david-antonio', nombre: 'David Antonio', color: '#7c3aed', activo: true },
+  { id: 'tech-david-andres', nombre: 'David Andres', color: '#b45309', activo: true },
+  { id: 'tech-cristian', nombre: 'Cristian', color: '#be185d', activo: true },
 ];
+
+function readDemoTechnicians() {
+  try {
+    const raw = localStorage.getItem(DEMO_TECHS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {
+    // Ignorar error de lectura
+  }
+  localStorage.setItem(DEMO_TECHS_KEY, JSON.stringify(DEFAULT_DEMO_TECHNICIANS));
+  return DEFAULT_DEMO_TECHNICIANS;
+}
 
 export async function listTechnicians() {
   const supabase = getSupabaseClient();
   if (!supabase) {
-    return DEFAULT_DEMO_TECHNICIANS;
+    return readDemoTechnicians();
   }
 
   const { data, error } = await supabase
@@ -118,6 +136,35 @@ export async function listTechnicians() {
     return [];
   }
   return data || [];
+}
+
+export async function createTechnician({ nombre, color }) {
+  const cleanName = String(nombre || '').trim();
+  const cleanColor = String(color || '#1d4ed8').trim();
+  if (!cleanName) throw new Error('Ingresa el nombre del técnico.');
+
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    const list = readDemoTechnicians();
+    const created = {
+      id: generateUuid(),
+      nombre: cleanName,
+      color: cleanColor,
+      activo: true,
+    };
+    list.push(created);
+    localStorage.setItem(DEMO_TECHS_KEY, JSON.stringify(list));
+    return created;
+  }
+
+  const { data, error } = await supabase
+    .from('tecnicos')
+    .insert([{ nombre: cleanName, color: cleanColor, activo: true }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 export async function createOrder(payload) {

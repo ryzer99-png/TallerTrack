@@ -26,14 +26,16 @@ create index if not exists idx_ordenes_tecnico_id
 create index if not exists idx_ordenes_prioridad
   on public.ordenes (prioridad);
 
--- 3. Técnicos iniciales de ejemplo (solo si la tabla está vacía)
+-- 3. Técnicos iniciales del taller (solo si la tabla está vacía)
 insert into public.tecnicos (nombre, color, activo)
 select nombre, color, activo
 from (
   values
-    ('Papá', '#1d4ed8', true),
-    ('Técnico 2', '#0f766e', true),
-    ('Técnico 3', '#7c3aed', true)
+    ('Rogelio', '#1d4ed8', true),
+    ('Juan David', '#0f766e', true),
+    ('David Antonio', '#7c3aed', true),
+    ('David Andres', '#b45309', true),
+    ('Cristian', '#be185d', true)
 ) as seed(nombre, color, activo)
 where not exists (select 1 from public.tecnicos);
 
@@ -65,3 +67,4 @@ create policy "Permitir crear tecnicos"
 drop policy if exists "Permitir actualizar tecnicos" on public.tecnicos;
 create policy "Permitir actualizar tecnicos"
   on public.tecnicos for update to anon, authenticated using (true) with check (true);
+

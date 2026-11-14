@@ -1,4 +1,4 @@
-import { updateOrder } from '../ordersService.js';
+import { createTechnician, updateOrder } from '../ordersService.js';
 import { escapeHtml, getAgeMeta, showToast } from '../utils.js';
 import { buildStatusWhatsAppUrl } from '../whatsapp.js';
 
@@ -35,6 +35,7 @@ const BOARD_COLUMNS = [
 
 export function renderPendingBoardView(container, state, { onRefreshOrders }) {
   const { orders, technicians, selectedTechnicianFilter, isLoading } = state;
+  const searchQuery = String(state.pendingSearchQuery || '');
 
   // Solo aparatos activos en el taller (excluye Entregado)
   const activeOrders = orders.filter((o) => o.estado !== 'Entregado');
@@ -45,10 +46,23 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
       techIdOrNull === null ? !o.tecnico_id : String(o.tecnico_id) === String(techIdOrNull)
     ).length;
 
+  const qLower = searchQuery.trim().toLowerCase();
   const filteredOrders = activeOrders.filter((o) => {
-    if (selectedTechnicianFilter === 'all') return true;
-    if (selectedTechnicianFilter === 'unassigned') return !o.tecnico_id;
-    return String(o.tecnico_id) === String(selectedTechnicianFilter);
+    if (selectedTechnicianFilter === 'unassigned' && o.tecnico_id) return false;
+    if (
+      selectedTechnicianFilter !== 'all' &&
+      selectedTechnicianFilter !== 'unassigned' &&
+      String(o.tecnico_id) !== String(selectedTechnicianFilter)
+    ) {
+      return false;
+    }
+    if (!qLower) return true;
+    return (
+      String(o.numero_orden || '').includes(qLower) ||
+      String(o.cliente_nombre || '').toLowerCase().includes(qLower) ||
+      String(o.tipo_equipo || '').toLowerCase().includes(qLower) ||
+      String(o.falla_reportada || '').toLowerCase().includes(qLower)
+    );
   });
 
   const kpis = [
@@ -64,8 +78,8 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
 
   container.innerHTML = `
     <section class="space-y-4">
-      <!-- A. Filtro rápido por Técnico -->
-      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-lg shadow-slate-300/30 p-3 sm:p-4">
+      <!-- A. Filtro rápido por Técnico + Buscador para alto volumen -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-lg shadow-slate-300/30 p-3 sm:p-4 space-y-3">
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
           <button
             type="button"
@@ -120,6 +134,28 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
               `;
             })
             .join('')}
+
+          <button
+            id="add-technician-btn"
+            type="button"
+            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm inline-flex items-center gap-1 transition-colors"
+          >
+            <span>+ Técnico</span>
+          </button>
+        </div>
+
+        <div class="relative flex items-center">
+          <span class="absolute left-3.5 text-slate-400 pointer-events-none">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </span>
+          <input
+            id="pending-search-input"
+            type="search"
+            inputmode="search"
+            value="${escapeHtml(searchQuery)}"
+            placeholder="Filtrar pendientes por N° orden, cliente, equipo o falla..."
+            class="w-full min-h-[42px] pl-10 pr-4 py-2 text-sm sm:text-base font-semibold rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
+          />
         </div>
       </div>
 
@@ -154,7 +190,7 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
                     ${
                       colOrders.length === 0
                         ? '<p class="text-xs font-semibold text-slate-400 text-center py-6 border border-dashed border-slate-200 rounded-xl">Sin equipos</p>'
-                        : `<div class="space-y-2.5">
+                        : `<div class="space-y-2.5 xl:max-h-[68vh] xl:overflow-y-auto pr-0.5">
                             ${colOrders.map((o) => renderWorkCard(o, col, technicians, techMap)).join('')}
                           </div>`
                     }
@@ -165,6 +201,22 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
       }
     </section>
   `;
+
+  const pendingSearchInput = container.querySelector('#pending-search-input');
+  pendingSearchInput?.addEventListener('input', (e) => {
+    state.pendingSearchQuery = e.target.value;
+    renderPendingBoardView(container, state, { onRefreshOrders });
+    const nextInput = container.querySelector('#pending-search-input');
+    if (nextInput) {
+      nextInput.focus();
+      const len = nextInput.value.length;
+      nextInput.setSelectionRange(len, len);
+    }
+  });
+
+  container.querySelector('#add-technician-btn')?.addEventListener('click', () => {
+    openAddTechnicianModal(onRefreshOrders);
+  });
 
   // Filtro por técnico
   container.querySelectorAll('[data-tech-filter]').forEach((btn) => {
@@ -285,3 +337,93 @@ function renderWorkCard(order, col, technicians, techMap) {
     </article>
   `;
 }
+
+function openAddTechnicianModal(onRefreshOrders) {
+  const modalRoot = document.getElementById('modal-root');
+  if (!modalRoot) return;
+
+  const COLORS = ['#1d4ed8', '#0f766e', '#7c3aed', '#b45309', '#be185d', '#0369a1'];
+  let selectedColor = COLORS[0];
+
+  modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4';
+  modalRoot.innerHTML = `
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-black text-slate-900">Agregar Técnico</h3>
+        <button id="close-tech-modal" type="button" class="px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 font-black">✕</button>
+      </div>
+      <form id="add-tech-form" class="space-y-4">
+        <div>
+          <label for="tech-name-input" class="block text-xs font-black uppercase text-slate-700 mb-1">
+            Nombre del Técnico
+          </label>
+          <input
+            id="tech-name-input"
+            type="text"
+            required
+            placeholder="Ej: Carlos"
+            class="w-full px-3.5 py-3 text-base font-bold rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+          />
+        </div>
+        <div>
+          <span class="block text-xs font-black uppercase text-slate-700 mb-2">Color identificador</span>
+          <div class="flex gap-2.5">
+            ${COLORS.map(
+              (c, idx) => `
+              <button
+                type="button"
+                data-tech-color-pick="${c}"
+                class="w-9 h-9 rounded-full border-2 transition-transform ${idx === 0 ? 'border-slate-900 scale-110' : 'border-white shadow'}"
+                style="background-color: ${c}"
+              ></button>
+            `
+            ).join('')}
+          </div>
+        </div>
+        <button
+          type="submit"
+          class="touch-btn w-full py-3 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-black text-base"
+        >
+          Guardar Técnico
+        </button>
+      </form>
+    </div>
+  `;
+
+  const closeModal = () => {
+    modalRoot.className = 'fixed inset-0 z-50 hidden';
+    modalRoot.innerHTML = '';
+  };
+
+  const nameInput = modalRoot.querySelector('#tech-name-input');
+  nameInput.focus();
+
+  modalRoot.querySelector('#close-tech-modal').addEventListener('click', closeModal);
+
+  modalRoot.querySelectorAll('[data-tech-color-pick]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedColor = btn.dataset.techColorPick;
+      modalRoot.querySelectorAll('[data-tech-color-pick]').forEach((b) => {
+        const active = b.dataset.techColorPick === selectedColor;
+        b.className = `w-9 h-9 rounded-full border-2 transition-transform ${
+          active ? 'border-slate-900 scale-110' : 'border-white shadow'
+        }`;
+      });
+    });
+  });
+
+  modalRoot.querySelector('#add-tech-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nombre = nameInput.value.trim();
+    if (!nombre) return;
+    try {
+      await createTechnician({ nombre, color: selectedColor });
+      showToast(`Técnico "${nombre}" agregado`);
+      closeModal();
+      await onRefreshOrders?.();
+    } catch (err) {
+      showToast(`Error: ${err.message}`, 'error');
+    }
+  });
+}
+
