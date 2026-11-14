@@ -136,12 +136,24 @@ export async function renderPublicOrderView(container, orderId) {
             ${
               costo > 0
                 ? `
-              <div class="sm:col-span-2 bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5 flex items-center justify-between">
-                <span class="text-sm font-black uppercase text-amber-950">Valor Estimado</span>
-                <span class="text-2xl font-black font-mono text-amber-950">${escapeHtml(formatCurrency(costo))}</span>
+              <div class="sm:col-span-2 bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <span class="block text-xs font-black uppercase tracking-wider text-amber-900">Precio de Reparación</span>
+                  ${
+                    order.estado === 'Por Aprobar'
+                      ? '<span class="text-xs font-semibold text-amber-800">Pendiente de tu aprobación para iniciar</span>'
+                      : ''
+                  }
+                </div>
+                <span class="text-2xl sm:text-3xl font-black font-mono text-amber-950">${escapeHtml(formatCurrency(costo))}</span>
               </div>
             `
-                : ''
+                : `
+              <div class="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between gap-2">
+                <span class="text-xs font-black uppercase tracking-wider text-slate-600">Precio de Reparación</span>
+                <span class="text-sm font-bold text-slate-500">Por definir (en revisión técnica)</span>
+              </div>
+            `
             }
           </dl>
         </section>

@@ -281,7 +281,7 @@ function renderOrderCard(order) {
             data-id="${escapeHtml(order.id)}"
             class="touch-btn px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-extrabold text-sm sm:text-base"
           >
-            💰 Cotización: ${costo > 0 ? escapeHtml(formatCurrency(costo)) : 'Asignar precio'}
+            💰 Precio Reparación: ${costo > 0 ? escapeHtml(formatCurrency(costo)) : 'Asignar'}
           </button>
 
           <button
@@ -316,47 +316,84 @@ function renderOrderCard(order) {
   `;
 }
 
+function formatCopInput(value) {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (!digits) return '';
+  const num = Number(digits);
+  if (!Number.isFinite(num) || num <= 0) return '';
+  return new Intl.NumberFormat('es-CO').format(num);
+}
+
+function parseCopInput(value) {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  const num = Number(digits || 0);
+  return Number.isFinite(num) && num >= 0 ? num : 0;
+}
+
 function openCostModal(order, onRefreshOrders) {
   const modalRoot = document.getElementById('modal-root');
   if (!modalRoot) return;
 
+  const PRESET_PRICES = [30000, 50000, 80000, 100000, 120000, 150000];
+  const initialFormatted = formatCopInput(Math.round(Number(order.costo_estimado || 0)));
+
   modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4';
   modalRoot.innerHTML = `
-    <div class="bg-white rounded-2xl border-4 border-slate-900 shadow-2xl max-w-md w-full p-5 space-y-4">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full p-5 space-y-4">
       <div class="flex items-center justify-between">
-        <h3 class="text-xl font-black text-slate-900">Cotización Orden #${escapeHtml(order.numero_orden)}</h3>
-        <button id="close-cost-modal" type="button" class="px-3 py-1 rounded-lg bg-slate-200 font-black">✕</button>
+        <h3 class="text-xl font-black text-slate-900">Precio de Reparación #${escapeHtml(order.numero_orden)}</h3>
+        <button id="close-cost-modal" type="button" class="px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 font-black">✕</button>
       </div>
       <p class="text-sm font-semibold text-slate-600">
         ${escapeHtml(order.cliente_nombre)} — ${escapeHtml(order.tipo_equipo)}
       </p>
       <form id="cost-form" class="space-y-4">
         <div>
+          <span class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+            Valores rápidos (1 toque)
+          </span>
+          <div class="grid grid-cols-3 gap-2">
+            ${PRESET_PRICES.map((p) => `
+              <button
+                type="button"
+                data-preset-price="${p}"
+                class="touch-chip px-2.5 py-2 rounded-xl border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-400 font-mono font-bold text-sm text-slate-800"
+              >
+                ${escapeHtml(formatCurrency(p))}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+        <div>
           <label for="cost-input" class="block text-sm font-black uppercase text-slate-700 mb-1">
-            Costo estimado (COP)
+            Precio de Reparación (COP)
           </label>
-          <input
-            id="cost-input"
-            type="number"
-            min="0"
-            step="1000"
-            value="${escapeHtml(Number(order.costo_estimado || 0))}"
-            class="w-full px-4 py-3.5 text-2xl font-black font-mono rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none"
-          />
+          <div class="relative flex items-center">
+            <span class="absolute left-4 text-2xl font-black font-mono text-slate-400 pointer-events-none">$</span>
+            <input
+              id="cost-input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="0"
+              value="${escapeHtml(initialFormatted)}"
+              class="w-full pl-10 pr-4 py-3.5 text-2xl font-black font-mono rounded-xl border-2 border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            />
+          </div>
         </div>
         <div class="flex gap-2">
           <button
             type="submit"
             class="touch-btn flex-1 py-3.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-black text-base"
           >
-            Guardar Valor
+            Guardar Precio
           </button>
           <button
-            id="save-and-quote-btn"
+            id="save-and-repaired-btn"
             type="button"
-            class="touch-btn flex-1 py-3.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-black text-base"
+            class="touch-btn flex-1 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base"
           >
-            Guardar y "Por Aprobar"
+            Guardar y "Reparado"
           </button>
         </div>
       </form>
@@ -372,35 +409,45 @@ function openCostModal(order, onRefreshOrders) {
   costInput.focus();
   costInput.select();
 
+  costInput.addEventListener('input', () => {
+    costInput.value = formatCopInput(costInput.value);
+  });
+
+  modalRoot.querySelectorAll('[data-preset-price]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      costInput.value = formatCopInput(btn.dataset.presetPrice);
+    });
+  });
+
   modalRoot.querySelector('#close-cost-modal').addEventListener('click', closeModal);
 
-  async function saveCost(alsoSetQuoteStatus) {
-    const val = Number(costInput.value || 0);
-    const patch = { costo_estimado: Number.isFinite(val) && val >= 0 ? val : 0 };
-    if (alsoSetQuoteStatus) {
-      patch.estado = 'Por Aprobar';
-    }
-    try {
-      await updateOrder(order.id, patch);
-      showToast(
-        alsoSetQuoteStatus
-          ? 'Cotización guardada y marcada "Por Aprobar"'
-          : 'Valor actualizado'
-      );
-      closeModal();
-      await onRefreshOrders?.();
-    } catch (err) {
-      showToast(`Error: ${err.message}`, 'error');
-    }
-  }
+    async function saveCost(alsoSetRepaired) {
+      const val = parseCopInput(costInput.value);
+      const patch = { costo_estimado: val };
+        if (alsoSetRepaired) {
+          patch.estado = 'Reparado';
+        }
+        try {
+          await updateOrder(order.id, patch);
+          showToast(
+        alsoSetRepaired
+              ? 'Precio guardado y marcado "Reparado"'
+              : 'Precio de reparación actualizado'
+          );
+          closeModal();
+          await onRefreshOrders?.();
+        } catch (err) {
+          showToast(`Error: ${err.message}`, 'error');
+        }
+      }
 
-  modalRoot.querySelector('#cost-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    saveCost(false);
-  });
+      modalRoot.querySelector('#cost-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveCost(false);
+      });
 
-  modalRoot.querySelector('#save-and-quote-btn').addEventListener('click', () => {
-    saveCost(true);
-  });
-}
+        modalRoot.querySelector('#save-and-repaired-btn').addEventListener('click', () => {
+          saveCost(true);
+        });
+      }
 

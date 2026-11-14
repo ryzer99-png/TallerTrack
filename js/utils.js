@@ -19,7 +19,7 @@ export const STATUS_META = {
     shortLabel: 'En Revisión',
     badgeClass: 'bg-blue-100 text-blue-950 border-blue-500',
     stepIndex: 1,
-    description: 'Nuestro técnico está diagnosticando la falla del equipo.',
+    description: 'Nuestro técnico está revisando el equipo para encontrar la falla y verificar su solución.',
   },
   'Por Aprobar': {
     label: 'Por Aprobar',
