@@ -1,3 +1,4 @@
+import { openDeliveryConfirmModal } from '../deliveryModal.js';
 import { updateOrder } from '../ordersService.js';
 import {
   escapeHtml,
@@ -141,11 +142,20 @@ export function renderActiveOrdersView(container, state, { onRefreshOrders }) {
     });
   });
 
-  // Eventos de tarjetas: cambio rápido de estado (1 toque)
+  // Eventos de tarjetas: cambio rápido de estado (1 toque, excepto Entregado que pide confirmación)
   container.querySelectorAll('[data-action="set-status"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
       const nextEstado = btn.dataset.estado;
+
+      if (nextEstado === 'Entregado') {
+        const order = orders.find((o) => String(o.id) === String(id));
+        if (order) {
+          openDeliveryConfirmModal(order, { onConfirmed: onRefreshOrders });
+        }
+        return;
+      }
+
       const originalText = btn.textContent;
       btn.disabled = true;
       btn.textContent = '...';

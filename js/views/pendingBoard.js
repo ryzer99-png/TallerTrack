@@ -1,3 +1,4 @@
+import { openDeliveryConfirmModal } from '../deliveryModal.js';
 import { createTechnician, updateOrder } from '../ordersService.js';
 import { escapeHtml, getAgeMeta, showToast } from '../utils.js';
 import { buildStatusWhatsAppUrl } from '../whatsapp.js';
@@ -243,11 +244,20 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
     });
   });
 
-  // Avanzar estado en 1 toque
+  // Avanzar estado en 1 toque (excepto Entregado que pide confirmación y observaciones)
   container.querySelectorAll('[data-action="advance-status"]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       const orderId = btn.dataset.id;
       const nextEstado = btn.dataset.nextEstado;
+
+      if (nextEstado === 'Entregado') {
+        const order = activeOrders.find((o) => String(o.id) === String(orderId));
+        if (order) {
+          openDeliveryConfirmModal(order, { onConfirmed: onRefreshOrders });
+        }
+        return;
+      }
+
       btn.disabled = true;
       btn.textContent = '...';
       try {
