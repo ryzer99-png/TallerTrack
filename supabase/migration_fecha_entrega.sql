@@ -38,3 +38,4 @@ update public.ordenes
 set fecha_entrega = coalesce(fecha_entrega, fecha_ingreso)
 where estado = 'Entregado'
   and fecha_entrega is null;
+

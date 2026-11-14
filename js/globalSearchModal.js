@@ -189,3 +189,4 @@ export function openGlobalSearchModal(state, { onNavigate } = {}) {
   renderResults();
   input?.focus();
 }
+
