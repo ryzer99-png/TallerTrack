@@ -1,0 +1,20 @@
+[build]
+  command = "bash scripts/generate-env.sh"
+  publish = "."
+
+# Redirección SPA para que /orden?id=... cargue index.html sin error 404
+[[redirects]]
+  from = "/orden"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/orden/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/env.js"
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"
+

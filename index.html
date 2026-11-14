@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>Teleradio — Gestión de Taller</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            teleradio: {
+              dark: '#0f172a',
+              primary: '#1d4ed8',
+              accent: '#15803d',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900 antialiased">
+  <!-- Barra superior del taller (se oculta en vista pública /orden) -->
+  <header id="workshop-header" class="sticky top-0 z-30 bg-slate-900 text-white border-b-4 border-blue-600 shadow-md">
+    <div class="max-w-5xl mx-auto px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-xl tracking-tight shadow">
+          TR
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-black text-lg sm:text-xl tracking-tight leading-none">TELERADIO</h1>
+            <span id="connection-badge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold bg-slate-800 text-slate-200 border border-slate-700">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              Conectando...
+            </span>
+          </div>
+          <p class="text-xs text-slate-300 font-medium hidden sm:block">Panel rápido de recepción y mesón</p>
+        </div>
+      </div>
+
+      <!-- Pestañas táctiles gigantes -->
+      <nav class="flex items-center gap-2 w-full sm:w-auto">
+        <button
+          id="nav-nueva"
+          type="button"
+          class="touch-btn flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl font-extrabold text-base flex items-center justify-center gap-2 border-2 transition-colors"
+        >
+          <span>+ Nueva Orden</span>
+        </button>
+        <button
+          id="nav-activas"
+          type="button"
+          class="touch-btn flex-1 sm:flex-none px-4 sm:px-5 py-2.5 rounded-xl font-extrabold text-base flex items-center justify-center gap-2 border-2 transition-colors"
+        >
+          <span>Órdenes</span>
+          <span id="active-count-badge" class="px-2 py-0.5 rounded-full text-xs font-black bg-white text-slate-900">0</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- Banner de Modo Demo (solo visible si faltan credenciales de Supabase) -->
+    <div id="demo-banner" class="hidden bg-amber-100 text-amber-950 border-t-2 border-amber-400 px-3 py-2 text-sm font-semibold">
+      <div class="max-w-5xl mx-auto flex flex-wrap items-center justify-between gap-2">
+        <span>
+          ⚠️ <strong>Modo Demo Local:</strong> Las órdenes se guardan en este navegador. Configura <code>SUPABASE_URL</code> y <code>SUPABASE_ANON_KEY</code> para sincronizar en tiempo real.
+        </span>
+        <button
+          id="open-config-btn"
+          type="button"
+          class="px-3 py-1.5 rounded-lg bg-amber-900 text-white font-bold text-xs hover:bg-amber-800"
+        >
+          Configurar Supabase
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenedor principal -->
+  <main id="app-root" class="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6 pb-20"></main>
+
+  <!-- Contenedor de modales -->
+  <div id="modal-root" class="fixed inset-0 z-50 hidden"></div>
+
+  <!-- Toast de notificaciones -->
+  <div id="toast-root" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-2 w-[92%] max-w-md"></div>
+
+  <!-- Variables de entorno (generadas en Netlify o locales) -->
+  <script src="/env.js"></script>
+  <script type="module" src="/js/app.js"></script>
+</body>
+</html>
+
