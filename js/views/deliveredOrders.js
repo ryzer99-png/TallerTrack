@@ -134,6 +134,16 @@ function renderDeliveredCard(order, techMap) {
   const publicUrl = getPublicOrderUrl(order);
   const waUrl = buildStatusWhatsAppUrl(order);
 
+  const obsLines = String(order.observaciones || '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const deliveryNotes = obsLines
+    .filter((l) => l.startsWith('Entrega:'))
+    .map((l) => l.replace(/^Entrega:\s*/i, '').trim())
+    .filter(Boolean);
+  const intakeNotes = obsLines.filter((l) => !l.startsWith('Entrega:'));
+
   return `
     <article class="bg-white rounded-2xl border border-slate-200/90 shadow-md shadow-slate-200/40 p-4 sm:p-5 space-y-3.5">
       <div class="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-200/80">
@@ -177,7 +187,7 @@ function renderDeliveredCard(order, techMap) {
         <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80">
           <span class="block text-[11px] font-black uppercase tracking-wider text-slate-500">Falla Reportada</span>
           <p class="font-bold text-slate-900">${escapeHtml(order.falla_reportada)}</p>
-          <p class="text-slate-500 font-medium text-xs">${escapeHtml(order.observaciones || '')}</p>
+          ${intakeNotes.length > 0 ? `<p class="text-slate-500 font-medium text-xs">${escapeHtml(intakeNotes.join(' · '))}</p>` : ''}
         </div>
 
         <div class="bg-slate-50 rounded-xl p-3 border border-slate-200/80 flex flex-col justify-center">
@@ -185,6 +195,15 @@ function renderDeliveredCard(order, techMap) {
           <p class="font-mono font-black text-lg text-slate-900">${costo > 0 ? escapeHtml(formatCurrency(costo)) : 'Sin precio registrado'}</p>
         </div>
       </div>
+
+      ${
+        deliveryNotes.length > 0
+          ? `<div class="bg-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-amber-950">
+              <span class="font-black uppercase tracking-wide text-[11px] text-amber-800 mr-1.5">📝 Nota de entrega:</span>
+              <span class="font-semibold">${escapeHtml(deliveryNotes.join(' · '))}</span>
+            </div>`
+          : ''
+      }
 
       <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
         <div class="flex flex-wrap items-center gap-2">
