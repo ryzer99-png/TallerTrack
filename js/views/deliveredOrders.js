@@ -4,6 +4,8 @@ import {
   formatCurrency,
   formatDateTime,
   getPublicOrderUrl,
+  paginateItems,
+  renderPaginationBar,
   showToast,
 } from '../utils.js';
 import { buildStatusWhatsAppUrl } from '../whatsapp.js';
@@ -37,6 +39,9 @@ export function renderDeliveredOrdersView(container, state, { onRefreshOrders })
       equipStr.includes(q)
     );
   });
+
+  const pagination = paginateItems(filtered, state.deliveredPage || 1, 10);
+  state.deliveredPage = pagination.page;
 
   container.innerHTML = `
     <section class="space-y-4">
@@ -85,8 +90,9 @@ export function renderDeliveredOrdersView(container, state, { onRefreshOrders })
                 <p class="text-sm font-medium text-slate-500">${deliveredOrders.length === 0 ? 'Cuando marques una orden como Entregado aparecerá aquí.' : 'Prueba buscando por otro número de orden, teléfono o nombre.'}</p>
               </div>`
             : `<div class="grid grid-cols-1 gap-4">
-                ${filtered.map((o) => renderDeliveredCard(o, techMap)).join('')}
-              </div>`
+                ${pagination.pageItems.map((o) => renderDeliveredCard(o, techMap)).join('')}
+              </div>
+              ${renderPaginationBar({ ...pagination, itemLabel: 'entregados' })}`
       }
     </section>
   `;
@@ -94,6 +100,7 @@ export function renderDeliveredOrdersView(container, state, { onRefreshOrders })
   const searchInput = container.querySelector('#delivered-search-input');
   searchInput?.addEventListener('input', (e) => {
     state.deliveredSearchQuery = e.target.value;
+    state.deliveredPage = 1;
     renderDeliveredOrdersView(container, state, { onRefreshOrders });
     const nextInput = container.querySelector('#delivered-search-input');
     if (nextInput) {
@@ -105,6 +112,22 @@ export function renderDeliveredOrdersView(container, state, { onRefreshOrders })
 
   container.querySelector('#refresh-delivered-btn')?.addEventListener('click', () => {
     onRefreshOrders?.();
+  });
+
+  container.querySelectorAll('[data-page-action]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const dir = btn.dataset.pageAction;
+      state.deliveredPage = dir === 'prev' ? Math.max(1, pagination.page - 1) : Math.min(pagination.totalPages, pagination.page + 1);
+      renderDeliveredOrdersView(container, state, { onRefreshOrders });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+  container.querySelectorAll('[data-page-num]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.deliveredPage = Number(btn.dataset.pageNum) || 1;
+      renderDeliveredOrdersView(container, state, { onRefreshOrders });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   });
 
   container.querySelectorAll('[data-action="reenter-warranty"]').forEach((btn) => {

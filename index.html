@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content" />
   <meta name="theme-color" content="#0f172a" />
   <title>Teleradio Desk — Gestión de Taller</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -34,20 +34,20 @@
       <body class="min-h-screen text-slate-900 antialiased">
         <!-- Barra superior POS de Taller (se oculta en vista pública /orden) -->
         <header id="workshop-header"
-          class="sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md text-white border-b border-slate-800 shadow-lg shadow-slate-950/20">
-          <div class="max-w-5xl mx-auto px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5">
-            <div class="flex items-center gap-3">
+          class="sticky top-0 z-30 bg-slate-900 text-white border-b border-slate-800 shadow-lg shadow-slate-950/20">
+          <div class="w-full max-w-5xl mx-auto px-3 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
                 <!-- Isotipo TR con acabado hardware pulido -->
                 <div
-                  class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-700 border border-blue-400/40 shadow-inner flex items-center justify-center font-extrabold text-base tracking-tight text-white">
+                  class="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-700 border border-blue-400/40 shadow-inner flex items-center justify-center font-extrabold text-sm sm:text-base tracking-tight text-white">
                   TR
                 </div>
-                <div>
-                  <div class="flex items-center gap-2">
-                      <h1 class="font-extrabold text-base sm:text-lg tracking-tight leading-none text-white">TELERADIO
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <h1 class="font-extrabold text-sm sm:text-lg tracking-tight leading-none text-white">TELERADIO
                       </h1>
                       <span id="connection-badge"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-800/90 text-slate-200 border border-slate-700/80">
+                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-slate-800/90 text-slate-200 border border-slate-700/80 whitespace-nowrap">
                         <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
                         Conectando...
                       </span>
@@ -57,20 +57,21 @@
                 </div>
               </div>
 
-                <!-- Pestañas segmentadas de control -->
-                <nav
-                  class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-800/80 border border-slate-700/80 w-full sm:w-auto">
+              <div class="flex items-center gap-1.5 shrink-0">
+                <!-- Pestañas segmentadas: barra inferior fija en móvil (<640px), pestañas en header en tablet/monitor -->
+                <nav id="workshop-nav"
+                  class="fixed bottom-0 inset-x-0 z-40 bg-slate-900/95 border-t border-slate-800 px-1.5 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] flex items-center justify-around gap-1 shadow-2xl sm:static sm:z-auto sm:w-auto sm:p-1 sm:rounded-xl sm:bg-slate-800/80 sm:border sm:border-slate-700/80 sm:shadow-none">
                   <button id="nav-nueva" type="button"
-                    class="touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-150">
+                    class="touch-btn flex-1 sm:flex-none px-1.5 sm:px-3.5 py-1 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-150">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M12 5v14" />
                       <path d="M5 12h14" />
                     </svg>
-                    <span>Nueva Orden</span>
+                    <span class="truncate">Nueva</span>
                   </button>
                   <button id="nav-pendientes" type="button"
-                    class="touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-150">
+                    class="touch-btn flex-1 sm:flex-none px-1.5 sm:px-3.5 py-1 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-150">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <rect width="7" height="9" x="3" y="3" rx="1" />
@@ -78,10 +79,10 @@
                       <rect width="7" height="9" x="14" y="12" rx="1" />
                       <rect width="7" height="5" x="3" y="16" rx="1" />
                     </svg>
-                    <span>Pendientes</span>
+                    <span class="truncate">Pendientes</span>
                   </button>
                   <button id="nav-activas" type="button"
-                    class="touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-150">
+                    class="touch-btn flex-1 sm:flex-none px-1.5 sm:px-3.5 py-1 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-150 relative">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
@@ -91,12 +92,14 @@
                       <path d="M8 11h.01" />
                       <path d="M8 16h.01" />
                     </svg>
-                    <span>Órdenes</span>
-                    <span id="active-count-badge"
-                      class="px-2 py-0.5 rounded-full text-xs font-extrabold font-mono bg-white text-slate-900">0</span>
+                    <span class="flex items-center gap-1">
+                      <span>Órdenes</span>
+                      <span id="active-count-badge"
+                        class="px-1.5 py-0.2 rounded-full text-[10px] sm:text-xs font-extrabold font-mono bg-white text-slate-900">0</span>
+                    </span>
                   </button>
                   <button id="nav-entregados" type="button"
-                    class="touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 transition-all duration-150">
+                    class="touch-btn flex-1 sm:flex-none px-1.5 sm:px-3.5 py-1 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 transition-all duration-150">
                     <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                       stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
@@ -105,20 +108,24 @@
                       <path d="M2 7v10a2 2 0 0 0 2 2h8" />
                       <path d="m22 7-10-4L2 7" />
                     </svg>
-                    <span>Entregados</span>
-                    <span id="delivered-count-badge"
-                      class="px-2 py-0.5 rounded-full text-xs font-extrabold font-mono bg-slate-700 text-slate-200">0</span>
-                  </button>
-                  <button id="open-global-search-btn" type="button" title="Buscar en todo el taller y entregados (Ctrl+K)"
-                    class="touch-btn px-3 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 text-slate-200 bg-slate-700/70 hover:bg-slate-600 transition-all duration-150 shrink-0">
-                    <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                      stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="m21 21-4.3-4.3" />
-                    </svg>
-                    <span class="hidden md:inline">Buscar</span>
+                    <span class="flex items-center gap-1">
+                      <span>Entregados</span>
+                      <span id="delivered-count-badge"
+                        class="px-1.5 py-0.2 rounded-full text-[10px] sm:text-xs font-extrabold font-mono bg-slate-700 text-slate-200">0</span>
+                    </span>
                   </button>
                 </nav>
+
+                <button id="open-global-search-btn" type="button" title="Buscar en todo el taller y entregados (Ctrl+K)"
+                  class="touch-btn min-h-[44px] px-3 py-2 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700/80 transition-all duration-150 shrink-0">
+                  <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.3-4.3" />
+                  </svg>
+                  <span class="hidden sm:inline">Buscar</span>
+                </button>
+              </div>
             </div>
 
             <!-- Banner de Modo Demo (solo visible si faltan credenciales de Supabase) -->
@@ -138,14 +145,14 @@
         </header>
 
         <!-- Contenedor principal -->
-        <main id="app-root" class="max-w-5xl mx-auto px-3 sm:px-5 py-4 sm:py-6 pb-20"></main>
+        <main id="app-root" class="w-full max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-6 pb-28 sm:pb-16"></main>
 
         <!-- Contenedor de modales -->
         <div id="modal-root" class="fixed inset-0 z-50 hidden"></div>
 
         <!-- Toast de notificaciones -->
         <div id="toast-root"
-          class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-2 w-[92%] max-w-md">
+          class="fixed bottom-20 sm:bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col gap-2 w-[92%] max-w-md">
         </div>
 
         <!-- Variables de entorno (generadas en Netlify o locales) -->

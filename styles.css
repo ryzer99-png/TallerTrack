@@ -3,6 +3,11 @@
   color-scheme: light;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 body {
   font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #eef2f6;
@@ -12,6 +17,13 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+input,
+textarea,
+select {
+  scroll-margin-top: 5rem;
+  scroll-margin-bottom: 6rem;
+}
+
 .font-mono {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
@@ -19,7 +31,7 @@ body {
 /* Botones y chips táctiles */
 .touch-chip {
   min-height: 44px;
-  transition: transform 0.1s ease, background-color 0.15s ease-out, border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+  transition: transform 0.14s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.15s ease-out, border-color 0.15s ease-out, box-shadow 0.15s ease-out;
   user-select: none;
 }
 
@@ -28,13 +40,13 @@ body {
 }
 
 .touch-btn {
-  min-height: 46px;
-  transition: transform 0.1s ease, background-color 0.15s ease-out, border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+  min-height: 44px;
+  transition: transform 0.14s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.15s ease-out, border-color 0.15s ease-out, box-shadow 0.15s ease-out;
   user-select: none;
 }
 
 .touch-btn:active {
-  transform: scale(0.99);
+  transform: scale(0.97);
 }
 
 /* Ocultar scrollbar horizontal en barras de filtros manteniendo scroll táctil */
@@ -45,4 +57,11 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Evita que la barra inferior móvil tape inputs al abrir el teclado virtual */
+@media (max-width: 639px) {
+  body:has(input:focus, textarea:focus, select:focus) #workshop-nav {
+    display: none;
+  }
 }

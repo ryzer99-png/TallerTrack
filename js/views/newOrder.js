@@ -56,7 +56,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
   let isSubmitting = false;
 
   container.innerHTML = `
-    <section class="bg-white rounded-2xl border border-slate-200/90 shadow-xl shadow-slate-300/40 overflow-hidden">
+    <section class="w-full max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200/90 shadow-xl shadow-slate-300/40 overflow-hidden">
       <!-- Barra de acento superior estilo consola de precisión -->
       <div class="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500"></div>
 
@@ -99,7 +99,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                   <button
                     id="close-equipment-tray-btn"
                     type="button"
-                    class="text-xs font-bold text-slate-600 hover:text-slate-900 px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+                    class="min-h-[44px] px-3 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
                   >
                     Ocultar
                   </button>
@@ -133,7 +133,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                   id="toggle-equipment-tray-btn"
                   type="button"
                   aria-expanded="false"
-                  class="shrink-0 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150"
+                  class="shrink-0 min-h-[44px] px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150"
                 >
                   <span>⚡ Rápidos</span>
                 </button>
@@ -179,7 +179,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
               <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Cliente y Contacto</h3>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label for="cliente-nombre" class="block text-sm font-bold text-slate-800 mb-1.5">
                   Nombre del Cliente <span class="text-red-600">*</span>
@@ -354,11 +354,11 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
           </div>
 
           <!-- Switch Principal de la Consola -->
-          <div class="mt-6">
+          <div class="mt-6 pb-2">
             <button
               id="submit-order-btn"
               type="submit"
-              class="min-h-[54px] w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-lg tracking-wider uppercase shadow-lg shadow-emerald-600/25 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2.5"
+              class="min-h-[54px] w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-base sm:text-lg tracking-wider uppercase shadow-lg shadow-emerald-600/25 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2.5"
             >
               <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
               <span>Registrar Orden</span>
@@ -389,8 +389,8 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
     eqTray.classList.toggle('hidden', !isEquipmentTrayOpen);
     toggleEqTrayBtn.setAttribute('aria-expanded', isEquipmentTrayOpen ? 'true' : 'false');
     toggleEqTrayBtn.className = isEquipmentTrayOpen
-      ? 'shrink-0 px-3 py-2 rounded-lg border border-blue-700 bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150 shadow-sm'
-      : 'shrink-0 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150';
+      ? 'shrink-0 min-h-[44px] px-3 py-2 rounded-lg border border-blue-700 bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150 shadow-sm'
+      : 'shrink-0 min-h-[44px] px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150';
 
     if (!isEquipmentTrayOpen) return;
 
@@ -635,11 +635,11 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
 
         returningBox.classList.remove('hidden');
         returningBox.innerHTML = `
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between gap-2">
             <span class="text-[11px] font-extrabold uppercase tracking-wider text-blue-800">
               Clientes registrados (1 toque para autocompletar)
             </span>
-            <button id="close-returning-box" type="button" class="text-xs font-bold text-slate-500 hover:text-slate-800">✕</button>
+            <button id="close-returning-box" type="button" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-sm font-bold text-slate-500 hover:text-slate-800" aria-label="Cerrar sugerencias">✕</button>
           </div>
           <div class="flex flex-col gap-2">
             ${matches
@@ -649,9 +649,9 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                 <button
                   type="button"
                   data-pick-client="${idx}"
-                  class="text-left flex-1 min-w-[180px]"
+                  class="text-left flex-1 min-w-0 min-h-[44px] flex flex-col justify-center"
                 >
-                  <span class="font-bold text-sm text-slate-900 block">${escapeHtml(c.nombre)}</span>
+                  <span class="font-bold text-sm text-slate-900 block truncate">${escapeHtml(c.nombre)}</span>
                   <span class="font-mono text-xs text-slate-600">${escapeHtml(c.telefono)} · ${c.totalOrdenes} servicio(s)</span>
                 </button>
                 ${
@@ -665,7 +665,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                             type="button"
                             data-pick-client-eq="${idx}"
                             data-eq-name="${escapeHtml(eq)}"
-                            class="px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold"
+                            class="touch-chip px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold"
                           >
                             + ${escapeHtml(eq)}
                           </button>
@@ -797,10 +797,18 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
   const waUrl = buildReceiptWhatsAppUrl(order);
   const publicUrl = getPublicOrderUrl(order);
 
-  modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4';
+  modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-3 sm:p-4';
   modalRoot.innerHTML = `
-    <div class="bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full p-5 sm:p-7 space-y-5">
-      <div class="text-center space-y-2">
+    <div class="relative bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+      <button
+        id="close-confirm-modal-top"
+        type="button"
+        aria-label="Cerrar ventana"
+        class="touch-btn absolute top-3 right-3 min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center"
+      >
+        ✕
+      </button>
+      <div class="text-center space-y-2 pt-1">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 text-3xl font-black">
           ✓
         </div>
@@ -822,16 +830,16 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
           href="${escapeHtml(waUrl)}"
           target="_blank"
           rel="noopener noreferrer"
-          class="touch-btn w-full py-4 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-lg text-center flex items-center justify-center gap-2 shadow-md border-2 border-emerald-800"
+          class="touch-btn w-full py-3.5 px-4 sm:px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-base sm:text-lg text-center flex items-center justify-center gap-2 shadow-md border-2 border-emerald-800"
         >
           <span>📲 Enviar Comprobante por WhatsApp</span>
         </a>
 
-        <div class="flex gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button
             id="copy-public-link-btn"
             type="button"
-            class="touch-btn flex-1 py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-sm border-2 border-slate-300"
+            class="touch-btn py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-sm border-2 border-slate-300"
           >
             🔗 Copiar enlace cliente
           </button>
@@ -839,14 +847,14 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
             href="${escapeHtml(publicUrl)}"
             target="_blank"
             rel="noopener noreferrer"
-            class="touch-btn py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-sm border-2 border-slate-300 flex items-center"
+            class="touch-btn py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-sm border-2 border-slate-300 flex items-center justify-center"
           >
             👁️ Ver ficha
           </a>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 gap-3 pt-2 border-t-2 border-slate-200">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t-2 border-slate-200">
         <button
           id="modal-new-order-btn"
           type="button"
@@ -862,13 +870,21 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
           Ver Tablero
         </button>
       </div>
-    </div >
-        `;
+    </div>
+  `;
 
   const closeModal = () => {
+    modalRoot.removeEventListener('click', onBackdropClick);
     modalRoot.className = 'fixed inset-0 z-50 hidden';
     modalRoot.innerHTML = '';
   };
+
+  const onBackdropClick = (e) => {
+    if (e.target === modalRoot) closeModal();
+  };
+
+  modalRoot.querySelector('#close-confirm-modal-top')?.addEventListener('click', closeModal);
+  modalRoot.addEventListener('click', onBackdropClick);
 
   modalRoot.querySelector('#copy-public-link-btn').addEventListener('click', async () => {
     try {

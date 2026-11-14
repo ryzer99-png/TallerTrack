@@ -81,11 +81,11 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
     <section class="space-y-4">
       <!-- A. Filtro rápido por Técnico + Buscador para alto volumen -->
       <div class="bg-white rounded-2xl border border-slate-200/90 shadow-lg shadow-slate-300/30 p-3 sm:p-4 space-y-3">
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        <div class="flex flex-nowrap items-center gap-2 overflow-x-auto no-scrollbar py-1 scroll-smooth snap-x snap-mandatory">
           <button
             type="button"
             data-tech-filter="all"
-            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
+            class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
               selectedTechnicianFilter === 'all'
                 ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
@@ -100,7 +100,7 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
           <button
             type="button"
             data-tech-filter="unassigned"
-            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
+            class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
               selectedTechnicianFilter === 'unassigned'
                 ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
                 : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
@@ -120,7 +120,7 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
                 <button
                   type="button"
                   data-tech-filter="${escapeHtml(t.id)}"
-                  class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
+                  class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
                     active
                       ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
                       : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300'
@@ -139,7 +139,7 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
           <button
             id="add-technician-btn"
             type="button"
-            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm inline-flex items-center gap-1 transition-colors"
+            class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm inline-flex items-center gap-1 transition-colors"
           >
             <span>+ Técnico</span>
           </button>
@@ -155,7 +155,7 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
             inputmode="search"
             value="${escapeHtml(searchQuery)}"
             placeholder="Filtrar pendientes por N° orden, cliente, equipo o falla..."
-            class="w-full min-h-[42px] pl-10 pr-4 py-2 text-sm sm:text-base font-semibold rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
+            class="w-full min-h-[44px] pl-10 pr-4 py-2 text-base font-semibold rounded-xl border border-slate-200 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
           />
         </div>
       </div>
@@ -312,7 +312,7 @@ function renderWorkCard(order, col, technicians, techMap) {
           data-action="reassign-tech"
           data-id="${escapeHtml(order.id)}"
           aria-label="Asignar técnico"
-          class="w-full px-2 py-1.5 rounded-lg border border-slate-200 bg-slate-50 text-xs font-bold text-slate-800 focus:border-blue-600 focus:outline-none"
+          class="w-full min-h-[44px] px-2.5 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm font-bold text-slate-800 focus:border-blue-600 focus:outline-none"
         >
           <option value="" ${!order.tecnico_id ? 'selected' : ''}>Sin Asignar</option>
           ${technicians
@@ -330,7 +330,7 @@ function renderWorkCard(order, col, technicians, techMap) {
           data-action="advance-status"
           data-id="${escapeHtml(order.id)}"
           data-next-estado="${escapeHtml(col.nextEstado)}"
-          class="flex-1 py-2 px-2.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs text-center transition-colors"
+          class="touch-btn min-h-[44px] flex-1 py-2 px-2.5 rounded-lg bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs sm:text-sm text-center transition-colors"
         >
           ${escapeHtml(col.nextLabel)}
         </button>
@@ -339,7 +339,8 @@ function renderWorkCard(order, col, technicians, techMap) {
           target="_blank"
           rel="noopener noreferrer"
           title="Avisar por WhatsApp"
-          class="py-2 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs text-center transition-colors"
+          aria-label="Avisar por WhatsApp"
+          class="touch-btn min-h-[44px] min-w-[44px] py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center transition-colors"
         >
           📲
         </a>
@@ -355,12 +356,12 @@ function openAddTechnicianModal(onRefreshOrders) {
   const COLORS = ['#1d4ed8', '#0f766e', '#7c3aed', '#b45309', '#be185d', '#0369a1'];
   let selectedColor = COLORS[0];
 
-  modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4';
+  modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-3 sm:p-4';
   modalRoot.innerHTML = `
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full p-5 space-y-4">
-      <div class="flex items-center justify-between">
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto p-5 space-y-4">
+      <div class="flex items-center justify-between gap-2">
         <h3 class="text-lg font-black text-slate-900">Agregar Técnico</h3>
-        <button id="close-tech-modal" type="button" class="px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 font-black">✕</button>
+        <button id="close-tech-modal" type="button" class="touch-btn min-w-[44px] px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 font-black" aria-label="Cerrar">✕</button>
       </div>
       <form id="add-tech-form" class="space-y-4">
         <div>
@@ -372,50 +373,66 @@ function openAddTechnicianModal(onRefreshOrders) {
             type="text"
             required
             placeholder="Ej: Carlos"
-            class="w-full px-3.5 py-3 text-base font-bold rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+            class="w-full min-h-[44px] px-3.5 py-2.5 text-base font-bold rounded-xl border border-slate-300 focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
           />
         </div>
         <div>
           <span class="block text-xs font-black uppercase text-slate-700 mb-2">Color identificador</span>
-          <div class="flex gap-2.5">
+          <div class="flex flex-wrap gap-2.5">
             ${COLORS.map(
               (c, idx) => `
               <button
                 type="button"
                 data-tech-color-pick="${c}"
-                class="w-9 h-9 rounded-full border-2 transition-transform ${idx === 0 ? 'border-slate-900 scale-110' : 'border-white shadow'}"
+                class="w-10 h-10 rounded-full border-2 transition-transform ${idx === 0 ? 'border-slate-900 scale-110' : 'border-white shadow'}"
                 style="background-color: ${c}"
               ></button>
             `
             ).join('')}
           </div>
         </div>
-        <button
-          type="submit"
-          class="touch-btn w-full py-3 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-black text-base"
-        >
-          Guardar Técnico
-        </button>
+        <div class="flex gap-2 pt-1">
+          <button
+            id="cancel-tech-modal"
+            type="button"
+            class="touch-btn px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            class="touch-btn flex-1 py-3 px-4 rounded-xl bg-blue-700 hover:bg-blue-800 text-white font-black text-base"
+          >
+            Guardar Técnico
+          </button>
+        </div>
       </form>
     </div>
   `;
 
   const closeModal = () => {
+    modalRoot.removeEventListener('click', onBackdropClick);
     modalRoot.className = 'fixed inset-0 z-50 hidden';
     modalRoot.innerHTML = '';
   };
+
+  const onBackdropClick = (e) => {
+    if (e.target === modalRoot) closeModal();
+  };
+  modalRoot.addEventListener('click', onBackdropClick);
 
   const nameInput = modalRoot.querySelector('#tech-name-input');
   nameInput.focus();
 
   modalRoot.querySelector('#close-tech-modal').addEventListener('click', closeModal);
+  modalRoot.querySelector('#cancel-tech-modal').addEventListener('click', closeModal);
 
   modalRoot.querySelectorAll('[data-tech-color-pick]').forEach((btn) => {
     btn.addEventListener('click', () => {
       selectedColor = btn.dataset.techColorPick;
       modalRoot.querySelectorAll('[data-tech-color-pick]').forEach((b) => {
         const active = b.dataset.techColorPick === selectedColor;
-        b.className = `w-9 h-9 rounded-full border-2 transition-transform ${
+        b.className = `w-10 h-10 rounded-full border-2 transition-transform ${
           active ? 'border-slate-900 scale-110' : 'border-white shadow'
         }`;
       });

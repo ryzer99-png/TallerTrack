@@ -108,6 +108,93 @@ export function getAgeMeta(isoString) {
   };
 }
 
+export function paginateItems(items, currentPage = 1, pageSize = 10) {
+  const totalItems = items.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const page = Math.min(Math.max(1, Number(currentPage) || 1), totalPages);
+  const start = (page - 1) * pageSize;
+  return {
+    pageItems: items.slice(start, start + pageSize),
+    page,
+    totalPages,
+    totalItems,
+  };
+}
+
+export function renderPaginationBar({ page, totalPages, totalItems, itemLabel = 'equipos' }) {
+  if (!totalItems) return '';
+
+  const pageNumbers = [];
+  if (totalPages > 1) {
+    const start = Math.max(1, page - 2);
+    const end = Math.min(totalPages, start + 4);
+    const adjustedStart = Math.max(1, end - 4);
+    for (let i = adjustedStart; i <= end; i += 1) {
+      pageNumbers.push(i);
+    }
+  }
+
+  return `
+    <nav aria-label="Paginación" class="bg-white rounded-2xl border border-slate-200/90 shadow-sm px-3 py-2.5 sm:px-4 flex items-center justify-between gap-2">
+      <button
+        type="button"
+        data-page-action="prev"
+        ${page <= 1 ? 'disabled' : ''}
+        class="touch-btn px-3.5 sm:px-4 py-2 rounded-xl border font-extrabold text-sm transition-colors ${
+          page <= 1
+            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+            : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-300'
+        }"
+      >
+        ← Ant
+      </button>
+
+      <div class="flex flex-col items-center justify-center text-center min-w-0">
+        ${
+          totalPages > 1
+            ? `<div class="hidden md:flex items-center gap-1 mb-1">
+                ${pageNumbers
+                  .map(
+                    (num) => `
+                  <button
+                    type="button"
+                    data-page-num="${num}"
+                    class="min-w-[34px] h-[34px] px-2 rounded-lg font-mono font-extrabold text-xs border transition-colors ${
+                      num === page
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }"
+                  >
+                    ${num}
+                  </button>
+                `
+                  )
+                  .join('')}
+              </div>`
+            : ''
+        }
+        <span class="text-sm font-black text-slate-900 md:hidden">Pág. ${page} de ${totalPages}</span>
+        <span class="text-[11px] font-bold text-slate-500 truncate">
+          <span class="hidden md:inline">Pág. ${page} de ${totalPages} · </span>(${totalItems} ${escapeHtml(itemLabel)})
+        </span>
+      </div>
+
+      <button
+        type="button"
+        data-page-action="next"
+        ${page >= totalPages ? 'disabled' : ''}
+        class="touch-btn px-3.5 sm:px-4 py-2 rounded-xl border font-extrabold text-sm transition-colors ${
+          page >= totalPages
+            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+            : 'bg-slate-900 hover:bg-slate-800 text-white border-slate-900'
+        }"
+      >
+        Sig →
+      </button>
+    </nav>
+  `;
+}
+
 export function showToast(message, variant = 'success') {
   const root = document.getElementById('toast-root');
   if (!root) return;
