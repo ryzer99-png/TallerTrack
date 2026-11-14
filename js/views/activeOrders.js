@@ -62,23 +62,25 @@ export function renderActiveOrdersView(container, state, { onRefreshOrders }) {
   container.innerHTML = `
     <section class="space-y-4">
       <!-- Barra de búsqueda y filtros -->
-      <div class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-3 sm:p-4 space-y-3">
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-lg shadow-slate-300/30 p-3.5 sm:p-4 space-y-3">
         <div class="flex flex-col sm:flex-row gap-2.5">
-          <div class="relative flex-1">
+          <div class="relative flex-1 flex items-center">
+            <span class="absolute left-3.5 text-slate-400 pointer-events-none">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
             <input
               id="orders-search-input"
               type="search"
               inputmode="search"
               value="${escapeHtml(searchQuery)}"
               placeholder="Buscar por N° orden (ej: 4063), últimos 4 dígitos del cel o nombre..."
-              class="w-full pl-11 pr-4 py-3.5 text-base sm:text-lg font-bold rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none bg-white"
+              class="w-full min-h-[48px] pl-11 pr-4 py-2.5 text-base sm:text-lg font-semibold rounded-xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
             />
-            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-xl pointer-events-none">🔍</span>
           </div>
           <button
             id="refresh-orders-btn"
             type="button"
-            class="touch-btn px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 font-extrabold text-slate-800 text-sm sm:text-base"
+            class="touch-btn px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 font-bold text-slate-700 text-sm sm:text-base transition-colors"
           >
             ↻ Actualizar
           </button>
@@ -87,37 +89,35 @@ export function renderActiveOrdersView(container, state, { onRefreshOrders }) {
         <!-- Filtros por estado -->
         <div id="status-filter-bar" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
           ${FILTER_OPTIONS.map((opt) => {
-            const active = statusFilter === opt.id;
-            return `
+    const active = statusFilter === opt.id;
+    return `
               <button
                 type="button"
                 data-filter="${escapeHtml(opt.id)}"
-                class="touch-chip shrink-0 px-4 py-2 rounded-xl border-2 font-extrabold text-sm ${
-                  active
-                    ? 'bg-slate-900 text-white border-slate-900'
-                    : 'bg-slate-50 text-slate-800 border-slate-300 hover:border-slate-500'
-                }"
+                class="touch-chip shrink-0 px-4 py-2 rounded-xl border-2 font-extrabold text-sm ${active
+        ? 'bg-slate-900 text-white border-slate-900'
+        : 'bg-slate-50 text-slate-800 border-slate-300 hover:border-slate-500'
+      }"
               >
                 ${escapeHtml(opt.label)}
               </button>
             `;
-          }).join('')}
+  }).join('')}
         </div>
       </div>
 
       <!-- Listado de tarjetas -->
-      ${
-        isLoading
-          ? `<div class="bg-white rounded-2xl border-2 border-slate-300 p-8 text-center font-bold text-slate-600 text-lg">Cargando órdenes del taller...</div>`
-          : filtered.length === 0
-            ? `<div class="bg-white rounded-2xl border-2 border-slate-300 p-8 text-center space-y-2">
+      ${isLoading
+      ? `<div class="bg-white rounded-2xl border-2 border-slate-300 p-8 text-center font-bold text-slate-600 text-lg">Cargando órdenes del taller...</div>`
+      : filtered.length === 0
+        ? `<div class="bg-white rounded-2xl border-2 border-slate-300 p-8 text-center space-y-2">
                 <p class="text-xl font-black text-slate-800">No hay órdenes que coincidan</p>
                 <p class="text-sm font-medium text-slate-600">Prueba cambiando el filtro o limpiando el buscador.</p>
               </div>`
-            : `<div id="orders-grid" class="grid grid-cols-1 gap-4">
+        : `<div id="orders-grid" class="grid grid-cols-1 gap-4">
                 ${filtered.map(renderOrderCard).join('')}
               </div>`
-      }
+    }
     </section>
   `;
 
@@ -201,9 +201,9 @@ function renderOrderCard(order) {
   const costo = Number(order.costo_estimado || 0);
 
   return `
-    <article class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-4 sm:p-5 space-y-4">
+    <article class="bg-white rounded-2xl border border-slate-200/90 shadow-lg shadow-slate-300/30 p-4 sm:p-5 space-y-4">
       <!-- Encabezado de tarjeta: N° Orden grande + Estado + Impresión -->
-      <div class="flex flex-wrap items-start justify-between gap-3 pb-3 border-b-2 border-slate-200">
+      <div class="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-slate-200/80">
         <div class="flex items-center gap-3">
           <div class="px-3.5 py-2 rounded-xl bg-slate-900 text-white font-mono font-black text-2xl sm:text-3xl tracking-tight shadow-sm">
             #${escapeHtml(order.numero_orden)}
@@ -222,11 +222,10 @@ function renderOrderCard(order) {
           <span class="px-3 py-1.5 rounded-xl border-2 text-sm font-black ${meta.badgeClass}">
             ${escapeHtml(meta.label)}
           </span>
-          <span class="px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold ${
-            isPrinted
-              ? 'bg-emerald-50 text-emerald-900 border-emerald-400'
-              : 'bg-amber-50 text-amber-900 border-amber-400'
-          }">
+          <span class="px-3 py-1.5 rounded-xl border-2 text-xs font-extrabold ${isPrinted
+      ? 'bg-emerald-50 text-emerald-900 border-emerald-400'
+      : 'bg-amber-50 text-amber-900 border-amber-400'
+    }">
             ${isPrinted ? '🖨️ Impreso' : '⏳ Pendiente de imprimir'}
           </span>
         </div>
@@ -254,23 +253,22 @@ function renderOrderCard(order) {
         </span>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
           ${QUICK_STATUS_BUTTONS.map((btn) => {
-            const isCurrent = order.estado === btn.estado;
-            return `
+      const isCurrent = order.estado === btn.estado;
+      return `
               <button
                 type="button"
                 data-action="set-status"
                 data-id="${escapeHtml(order.id)}"
                 data-estado="${escapeHtml(btn.estado)}"
-                class="touch-chip px-3 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center ${
-                  isCurrent
-                    ? 'bg-blue-700 text-white border-blue-900 shadow'
-                    : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
-                }"
+                class="touch-chip px-3 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center ${isCurrent
+          ? 'bg-blue-700 text-white border-blue-900 shadow'
+          : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
+        }"
               >
                 ${escapeHtml(btn.label)}
               </button>
             `;
-          }).join('')}
+    }).join('')}
         </div>
       </div>
 

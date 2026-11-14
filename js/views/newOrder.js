@@ -54,191 +54,242 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
   let isSubmitting = false;
 
   container.innerHTML = `
-    <section class="bg-white rounded-2xl border-2 border-slate-300 shadow-sm p-4 sm:p-6">
-      <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b-2 border-slate-200">
-        <div>
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Nueva Orden de Ingreso</h2>
-          <p class="text-sm sm:text-base text-slate-600 font-medium">Toque rápido para recepción en mesón</p>
+    <section class="bg-white rounded-2xl border border-slate-200/90 shadow-xl shadow-slate-300/40 overflow-hidden">
+      <!-- Barra de acento superior estilo consola de precisión -->
+      <div class="h-1.5 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500"></div>
+
+      <div class="p-4 sm:p-6 space-y-6">
+        <!-- Encabezado de Consola -->
+        <div class="flex flex-wrap items-start justify-between gap-3 pb-4 border-b border-slate-200/80">
+          <div>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Nueva Orden de Ingreso</h2>
+            <p class="text-sm text-slate-500 font-medium mt-0.5">Recepción rápida de equipos en mesón</p>
+          </div>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-dashed border-emerald-300">
+            <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+            <span>Impresión automática al guardar</span>
+          </span>
         </div>
-        <span class="px-3 py-1 rounded-lg bg-slate-100 border border-slate-300 text-xs font-extrabold uppercase tracking-wider text-slate-700">
-          Impresión automática al guardar
-        </span>
-      </div>
 
-      <form id="new-order-form" class="space-y-6" novalidate>
-        <!-- 1. Tipo de Equipo (Input inteligente + botón Rápidos al lado) -->
-        <div id="equipment-field-wrap" class="relative">
-          <label for="tipo-equipo-input" class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-2">
-            1. Tipo de Equipo *
-          </label>
-
-          <!-- Sugerencias rápidas compactas encima del input (horizontal en móvil, wrap en tablet/PC) -->
-          <div
-            id="equipment-suggestions-tray"
-            class="hidden mb-2.5 p-2.5 sm:p-3 rounded-2xl border-2 border-blue-300 bg-slate-50 shadow-sm space-y-2"
-          >
-            <div class="flex items-center justify-between gap-2">
-              <span class="text-xs font-black uppercase tracking-wider text-blue-900">
-                Toca para elegir o desliza →
-              </span>
-              <button
-                id="close-equipment-tray-btn"
-                type="button"
-                class="text-xs font-black text-slate-700 hover:text-slate-900 px-2.5 py-1 rounded-lg bg-slate-200"
-              >
-                Ocultar
-              </button>
+        <form id="new-order-form" class="space-y-5" novalidate>
+          <!-- ZONA 1: IDENTIFICACIÓN DEL EQUIPO -->
+          <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 space-y-5">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-mono text-[11px] font-bold">01</span>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Identificación del Equipo</h3>
             </div>
-            <div id="equipment-suggestions-list" class="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 pb-1 sm:flex-wrap sm:overflow-visible"></div>
+
+            <!-- 1. Tipo de Equipo (Input inteligente + sugerencias encima + píldora Rápidos integrada) -->
+            <div id="equipment-field-wrap" class="relative">
+              <label for="tipo-equipo-input" class="block text-sm font-bold text-slate-800 mb-2">
+                Tipo de Equipo <span class="text-red-600">*</span>
+              </label>
+
+              <!-- Sugerencias rápidas compactas encima del input -->
+              <div
+                id="equipment-suggestions-tray"
+                class="hidden mb-2.5 p-2.5 sm:p-3 rounded-xl border border-blue-200 bg-white shadow-md shadow-slate-200/60 space-y-2"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-blue-800">
+                    Toca para elegir o desliza →
+                  </span>
+                  <button
+                    id="close-equipment-tray-btn"
+                    type="button"
+                    class="text-xs font-bold text-slate-600 hover:text-slate-900 px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    Ocultar
+                  </button>
+                </div>
+                <div id="equipment-suggestions-list" class="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 pb-1 sm:flex-wrap sm:overflow-visible"></div>
+              </div>
+
+              <!-- Contenedor unificado de input + píldora Rápidos -->
+              <div class="flex items-center rounded-xl border border-slate-300 bg-slate-50/70 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-600 transition-all duration-150 pr-1.5">
+                <div class="pl-3.5 text-slate-400 pointer-events-none shrink-0">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
+                </div>
+                <input
+                  id="tipo-equipo-input"
+                  name="tipo_equipo"
+                  type="text"
+                  required
+                  autocomplete="off"
+                  placeholder="Ej: TV LCD/LED, Air Fryer Oster, Consola PS4..."
+                  class="w-full min-h-[48px] px-3 py-2.5 text-base sm:text-lg font-semibold text-slate-900 bg-transparent focus:outline-none"
+                />
+                <button
+                  id="clear-equipment-btn"
+                  type="button"
+                  aria-label="Limpiar tipo de equipo"
+                  class="hidden shrink-0 w-8 h-8 mr-1 rounded-lg bg-slate-200/80 hover:bg-slate-300 text-slate-700 font-bold text-sm flex items-center justify-center transition-colors"
+                >
+                  ✕
+                </button>
+                <button
+                  id="toggle-equipment-tray-btn"
+                  type="button"
+                  aria-expanded="false"
+                  class="shrink-0 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150"
+                >
+                  <span>⚡ Rápidos</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. Accesorios Recibidos (Multi-tag acumulable + detalle libre) -->
+            <div class="space-y-3">
+              <label class="block text-sm font-bold text-slate-800">
+                Accesorios Recibidos
+              </label>
+              <div id="accessory-chips" class="flex flex-wrap gap-2">
+                ${ACCESSORY_OPTIONS.map((acc) => `
+                  <button
+                    type="button"
+                    data-accessory="${escapeHtml(acc)}"
+                    class="touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5"
+                  >
+                    ${escapeHtml(acc)}
+                  </button>
+                `).join('')}
+              </div>
+              <div>
+                <label for="accesorios-detalle-input" class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Otros accesorios o detalles:
+                </label>
+                <input
+                  id="accesorios-detalle-input"
+                  name="accesorios_detalle"
+                  type="text"
+                  autocomplete="off"
+                  placeholder="Ej: incluye estuche, cable HDMI, adaptador 12V..."
+                  class="w-full min-h-[46px] px-3.5 py-2.5 text-base font-medium rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
+                />
+              </div>
+            </div>
           </div>
 
-          <div class="flex items-stretch gap-2">
-            <div class="relative flex-1 flex items-center">
-              <input
-                id="tipo-equipo-input"
-                name="tipo_equipo"
-                type="text"
-                required
-                autocomplete="off"
-                placeholder="Ej: TV LCD/LED, Air Fryer Oster, Consola PS4..."
-                class="w-full pl-4 pr-11 py-3.5 text-base sm:text-lg font-bold rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none bg-white"
-              />
-              <button
-                id="clear-equipment-btn"
-                type="button"
-                aria-label="Limpiar tipo de equipo"
-                class="hidden absolute right-2 w-9 h-9 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 font-black text-base flex items-center justify-center"
-              >
-                ✕
-              </button>
+          <!-- ZONA 2: CLIENTE Y CONTACTO -->
+          <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-mono text-[11px] font-bold">02</span>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Cliente y Contacto</h3>
             </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="cliente-nombre" class="block text-sm font-bold text-slate-800 mb-1.5">
+                  Nombre del Cliente <span class="text-red-600">*</span>
+                </label>
+                <div class="relative flex items-center">
+                  <span class="absolute left-3.5 text-slate-400 pointer-events-none">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </span>
+                  <input
+                    id="cliente-nombre"
+                    name="cliente_nombre"
+                    type="text"
+                    required
+                    autocomplete="name"
+                    placeholder="Ej: Juan Pérez"
+                    class="w-full min-h-[48px] pl-10 pr-4 py-2.5 text-base sm:text-lg font-semibold rounded-xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label for="cliente-telefono" class="block text-sm font-bold text-slate-800 mb-1.5">
+                  WhatsApp / Teléfono <span class="text-red-600">*</span>
+                </label>
+                <div class="relative flex items-center">
+                  <span class="absolute left-3.5 text-slate-400 pointer-events-none">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </span>
+                  <input
+                    id="cliente-telefono"
+                    name="cliente_telefono"
+                    type="tel"
+                    inputmode="tel"
+                    required
+                    autocomplete="tel"
+                    placeholder="Ej: 3001234567"
+                    class="w-full min-h-[48px] pl-10 pr-4 py-2.5 text-base sm:text-lg font-semibold font-mono rounded-xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ZONA 3: DIAGNÓSTICO INICIAL -->
+          <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-mono text-[11px] font-bold">03</span>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Diagnóstico Inicial</h3>
+            </div>
+
+            <div>
+              <label for="falla-reportada" class="block text-sm font-bold text-slate-800 mb-2">
+                Falla Reportada <span class="text-red-600">*</span>
+              </label>
+              <div id="fault-chips" class="flex flex-wrap gap-2 mb-2.5">
+                ${FAULT_CHIPS.map((fault) => `
+                  <button
+                    type="button"
+                    data-fault="${escapeHtml(fault)}"
+                    class="touch-chip px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-slate-700 font-semibold text-sm transition-colors duration-150"
+                  >
+                    + ${escapeHtml(fault)}
+                  </button>
+                `).join('')}
+              </div>
+              <div class="relative">
+                <span class="absolute left-3.5 top-3.5 text-slate-400 pointer-events-none">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </span>
+                <textarea
+                  id="falla-reportada"
+                  name="falla_reportada"
+                  rows="2"
+                  required
+                  placeholder="Describe la falla o toca los chips de arriba..."
+                  class="w-full pl-10 pr-4 py-3 text-base sm:text-lg font-medium rounded-xl border border-slate-300 bg-slate-50/70 focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
+                ></textarea>
+              </div>
+            </div>
+
+            <div>
+              <label for="observaciones" class="block text-sm font-bold text-slate-800 mb-1.5">
+                Observaciones
+              </label>
+              <div class="relative flex items-center">
+                <span class="absolute left-3.5 text-slate-400 pointer-events-none">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </span>
+                <input
+                  id="observaciones"
+                  name="observaciones"
+                  type="text"
+                  value="Revisar y cotizar antes de reparar"
+                  class="w-full min-h-[48px] pl-10 pr-4 py-2.5 text-base font-medium rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 focus:outline-none transition-all duration-150"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Switch Principal de la Consola -->
+          <div class="pt-1">
             <button
-              id="toggle-equipment-tray-btn"
-              type="button"
-              aria-expanded="false"
-              class="touch-btn shrink-0 px-3.5 sm:px-4 py-3.5 rounded-xl border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-900 font-extrabold text-sm sm:text-base flex items-center justify-center gap-1"
+              id="submit-order-btn"
+              type="submit"
+              class="min-h-[54px] w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-lg tracking-wider uppercase shadow-lg shadow-emerald-600/25 active:scale-[0.99] transition-all duration-150 flex items-center justify-center gap-2.5"
             >
-              <span>⚡ Rápidos</span>
+              <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+              <span>Registrar Orden</span>
             </button>
           </div>
-        </div>
-
-        <!-- 2. Accesorios Recibidos (Multi-tag acumulable + detalle libre) -->
-        <div class="space-y-3">
-          <label class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800">
-            2. Accesorios Recibidos
-          </label>
-          <div id="accessory-chips" class="flex flex-wrap gap-2.5">
-            ${ACCESSORY_OPTIONS.map((acc) => `
-              <button
-                type="button"
-                data-accessory="${escapeHtml(acc)}"
-                class="touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5"
-              >
-                ${escapeHtml(acc)}
-              </button>
-            `).join('')}
-          </div>
-          <div>
-            <label for="accesorios-detalle-input" class="block text-xs sm:text-sm font-extrabold uppercase tracking-wide text-slate-700 mb-1.5">
-              Otros accesorios o detalles:
-            </label>
-            <input
-              id="accesorios-detalle-input"
-              name="accesorios_detalle"
-              type="text"
-              autocomplete="off"
-              placeholder="Ej: incluye estuche, cable HDMI, adaptador 12V..."
-              class="w-full px-4 py-3 text-base sm:text-lg font-semibold rounded-xl border-2 border-slate-300 focus:border-blue-600 focus:outline-none bg-slate-50 focus:bg-white"
-            />
-          </div>
-        </div>
-
-        <!-- 3. Datos del Cliente -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label for="cliente-nombre" class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-1.5">
-              3. Nombre del Cliente *
-            </label>
-            <input
-              id="cliente-nombre"
-              name="cliente_nombre"
-              type="text"
-              required
-              autocomplete="name"
-              placeholder="Ej: Juan Pérez"
-              class="w-full px-4 py-3.5 text-lg font-bold rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none bg-white"
-            />
-          </div>
-
-          <div>
-            <label for="cliente-telefono" class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-1.5">
-              4. WhatsApp / Teléfono *
-            </label>
-            <input
-              id="cliente-telefono"
-              name="cliente_telefono"
-              type="tel"
-              inputmode="tel"
-              required
-              autocomplete="tel"
-              placeholder="Ej: 3001234567"
-              class="w-full px-4 py-3.5 text-lg font-bold rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none bg-white"
-            />
-          </div>
-        </div>
-
-        <!-- 4. Falla Reportada -->
-        <div>
-          <label for="falla-reportada" class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-2">
-            5. Falla Reportada *
-          </label>
-          <div id="fault-chips" class="flex flex-wrap gap-2 mb-3">
-            ${FAULT_CHIPS.map((fault) => `
-              <button
-                type="button"
-                data-fault="${escapeHtml(fault)}"
-                class="touch-chip px-4 py-2.5 rounded-xl border-2 border-slate-300 bg-slate-50 hover:bg-blue-50 hover:border-blue-500 text-slate-900 font-bold text-sm sm:text-base"
-              >
-                + ${escapeHtml(fault)}
-              </button>
-            `).join('')}
-          </div>
-          <textarea
-            id="falla-reportada"
-            name="falla_reportada"
-            rows="2"
-            required
-            placeholder="Describe la falla o toca los botones de arriba..."
-            class="w-full px-4 py-3 text-lg font-semibold rounded-xl border-2 border-slate-400 focus:border-blue-600 focus:outline-none bg-white"
-          ></textarea>
-        </div>
-
-        <!-- 5. Observaciones -->
-        <div>
-          <label for="observaciones" class="block text-sm sm:text-base font-black uppercase tracking-wide text-slate-800 mb-1.5">
-            6. Observaciones
-          </label>
-          <input
-            id="observaciones"
-            name="observaciones"
-            type="text"
-            value="Revisar y cotizar antes de reparar"
-            class="w-full px-4 py-3.5 text-base sm:text-lg font-semibold rounded-xl border-2 border-slate-300 focus:border-blue-600 focus:outline-none bg-slate-50 focus:bg-white"
-          />
-        </div>
-
-        <!-- Botón Principal -->
-        <div class="pt-2">
-          <button
-            id="submit-order-btn"
-            type="submit"
-            class="touch-btn w-full py-4 sm:py-5 px-6 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white font-black text-xl sm:text-2xl tracking-wide shadow-lg border-2 border-emerald-900 flex items-center justify-center gap-3"
-          >
-            <span>✅ REGISTRAR ORDEN</span>
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </section>
   `;
 
@@ -262,8 +313,8 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
     eqTray.classList.toggle('hidden', !isEquipmentTrayOpen);
     toggleEqTrayBtn.setAttribute('aria-expanded', isEquipmentTrayOpen ? 'true' : 'false');
     toggleEqTrayBtn.className = isEquipmentTrayOpen
-      ? 'touch-btn shrink-0 px-3.5 sm:px-4 py-3.5 rounded-xl border-2 border-blue-700 bg-blue-700 text-white font-extrabold text-sm sm:text-base flex items-center justify-center gap-1'
-      : 'touch-btn shrink-0 px-3.5 sm:px-4 py-3.5 rounded-xl border-2 border-blue-300 bg-blue-50 hover:bg-blue-100 text-blue-900 font-extrabold text-sm sm:text-base flex items-center justify-center gap-1';
+      ?'shrink-0 px-3 py-2 rounded-lg border border-blue-700 bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150 shadow-sm'
+      : 'shrink-0 px-3 py-2 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors duration-150';
 
     if (!isEquipmentTrayOpen) return;
 
@@ -280,14 +331,13 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
           <button
             type="button"
             data-eq-suggestion="${escapeHtml(item)}"
-            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border-2 font-extrabold text-sm sm:text-base transition-colors ${
               isExact
-                ? 'bg-blue-700 text-white border-blue-900 shadow-sm'
-                : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
-            }"
-          >
-            ${escapeHtml(item)}
-          </button>
+            ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
+            : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
+      }"
+      >
+      ${ escapeHtml(item) }
+          </button >
         `;
       })
       .join('');
@@ -303,15 +353,17 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
   }
 
   function syncAccessoriesUI() {
+    const checkIcon = '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     accButtons.forEach((btn) => {
       const acc = btn.dataset.accessory;
       const active = selectedAccessories.has(acc);
       const isNone = acc === 'Sin accesorios';
       btn.className = active
         ? isNone
-          ? 'touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
-          : 'touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5 bg-blue-700 text-white border-blue-900 shadow-sm'
-        : 'touch-chip px-4 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center flex items-center justify-center gap-1.5 bg-slate-50 text-slate-800 border-slate-300 hover:border-slate-500';
+          ? 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
+          : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-indigo-700 text-white border-indigo-800 shadow-sm'
+        : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50';
+      btn.innerHTML = active ? `${ checkIcon } < span > ${ escapeHtml(acc) }</span > ` : ` < span > ${ escapeHtml(acc) }</span > `;
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
@@ -402,7 +454,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
       if (!current) {
         faultInput.value = text;
       } else if (!current.toLowerCase().includes(text.toLowerCase())) {
-        faultInput.value = `${current}, ${text}`;
+        faultInput.value = `${ current }, ${ text }`;
       }
       faultInput.focus();
     });
@@ -468,11 +520,12 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
       });
     } catch (err) {
       console.error('Error al registrar orden:', err);
-      showToast(`Error al guardar: ${err.message || 'Verifica Supabase'}`, 'error');
+      showToast(`Error al guardar: ${ err.message || 'Verifica Supabase' }`, 'error');
     } finally {
       isSubmitting = false;
       submitBtn.disabled = false;
-      submitBtn.innerHTML = '<span>✅ REGISTRAR ORDEN</span>';
+      submitBtn.innerHTML =
+        '<svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg><span>Registrar Orden</span>';
     }
   });
 }
@@ -486,7 +539,7 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
 
   modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4';
   modalRoot.innerHTML = `
-    <div class="bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full p-5 sm:p-7 space-y-5">
+      < div class= "bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full p-5 sm:p-7 space-y-5" >
       <div class="text-center space-y-2">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 text-3xl font-black">
           ✓
@@ -549,8 +602,8 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
           Ver Tablero
         </button>
       </div>
-    </div>
-  `;
+    </div >
+        `;
 
   const closeModal = () => {
     modalRoot.className = 'fixed inset-0 z-50 hidden';
