@@ -280,18 +280,27 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                 />
               </div>
             </div>
+          </div>
 
-            <!-- Asignar Técnico y Prioridad (compacto y táctil) -->
-            <div class="pt-2 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div class="space-y-1.5 flex-1">
-                <span class="block text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                  Asignar Técnico
+          <!-- ZONA 4: ASIGNACIÓN Y TALLER -->
+          <div class="rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5 space-y-4">
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-mono text-[11px] font-bold">04</span>
+              <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-600">Asignación y Taller</h3>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+              <!-- Columna Principal: Técnico Responsable (cuadrícula ordenada) -->
+              <div class="lg:col-span-8 space-y-2">
+                <span class="block text-sm font-bold text-slate-800">
+                  Técnico Responsable
                 </span>
-                <div id="technician-chips" class="flex flex-wrap gap-2">
+                <div id="technician-chips" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
                     data-tech-id=""
-                    class="touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5"
+                    data-tech-name="Sin Asignar"
+                    class="touch-chip py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2"
                   >
                     Sin Asignar
                   </button>
@@ -301,11 +310,12 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                     <button
                       type="button"
                       data-tech-id="${escapeHtml(t.id)}"
+                      data-tech-name="${escapeHtml(t.nombre)}"
                       data-tech-color="${escapeHtml(t.color || '#1d4ed8')}"
-                      class="touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5"
+                      class="touch-chip py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2"
                     >
                       <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${escapeHtml(t.color || '#1d4ed8')}"></span>
-                      <span>${escapeHtml(t.nombre)}</span>
+                      <span class="truncate">${escapeHtml(t.nombre)}</span>
                     </button>
                   `
                     )
@@ -313,24 +323,38 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                 </div>
               </div>
 
-              <div class="space-y-1.5 shrink-0">
-                <span class="block text-xs font-extrabold uppercase tracking-wider text-slate-600">
-                  Prioridad
+              <!-- Columna Secundaria: Prioridad del Servicio (Switch segmentado 2 estados) -->
+              <div class="lg:col-span-4 space-y-2">
+                <span class="block text-sm font-bold text-slate-800">
+                  Prioridad del Servicio
                 </span>
-                <button
-                  id="priority-urgent-btn"
-                  type="button"
-                  aria-pressed="false"
-                  class="touch-chip px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-1.5 transition-colors duration-150"
-                >
-                  <span>⚡ Urgente / Garantía</span>
-                </button>
+                <div id="priority-segmented" class="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-white border border-slate-200">
+                  <button
+                    type="button"
+                    data-priority="Normal"
+                    aria-pressed="true"
+                    class="touch-chip py-2 px-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1"
+                  >
+                    Normal
+                  </button>
+                  <button
+                    type="button"
+                    data-priority="Urgente / Garantía"
+                    aria-pressed="false"
+                    class="touch-chip py-2 px-2.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1"
+                  >
+                    <span>⚡ Urgente</span>
+                  </button>
+                </div>
+                <p id="priority-hint" class="text-[11px] font-medium text-slate-500">
+                  Orden regular de ingreso en taller
+                </p>
               </div>
             </div>
           </div>
 
           <!-- Switch Principal de la Consola -->
-          <div class="pt-1">
+          <div class="mt-6">
             <button
               id="submit-order-btn"
               type="submit"
@@ -421,22 +445,55 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
   }
 
   const techButtons = container.querySelectorAll('[data-tech-id]');
-  const urgentBtn = container.querySelector('#priority-urgent-btn');
+  const priorityButtons = container.querySelectorAll('[data-priority]');
+  const priorityHint = container.querySelector('#priority-hint');
 
   function syncAssignmentUI() {
+    const checkIcon = '<svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
     techButtons.forEach((btn) => {
       const techId = btn.dataset.techId || null;
+      const techName = btn.dataset.techName || '';
+      const techColor = btn.dataset.techColor || '';
       const active = techId === selectedTechnicianId;
+
       btn.className = active
-        ? 'touch-chip px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
-        : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-slate-300';
+        ? 'touch-chip py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm ring-2 ring-slate-900/10'
+        : 'touch-chip py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700';
+
+      const dotHtml = techColor
+        ? `<span class="w-2.5 h-2.5 rounded-full shrink-0 ${active ? 'ring-1 ring-white/60' : ''}" style="background-color: ${escapeHtml(techColor)}"></span>`
+        : '';
+
+      btn.innerHTML = `${active ? checkIcon : dotHtml}<span class="truncate">${escapeHtml(techName)}</span>`;
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
 
-    urgentBtn.className = isUrgent
-      ? 'touch-chip px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-1.5 bg-red-600 text-white border-red-700 shadow-sm transition-colors duration-150'
-      : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-red-300 hover:bg-red-50 transition-colors duration-150';
-    urgentBtn.setAttribute('aria-pressed', isUrgent ? 'true' : 'false');
+    priorityButtons.forEach((btn) => {
+      const isUrgentBtn = btn.dataset.priority === 'Urgente / Garantía';
+      const active = isUrgentBtn ? isUrgent : !isUrgent;
+
+      if (active && isUrgentBtn) {
+        btn.className =
+          'touch-chip py-2 px-2.5 rounded-lg border text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1 bg-amber-50 border-amber-300 text-amber-800 shadow-sm';
+      } else if (active) {
+        btn.className =
+          'touch-chip py-2 px-2.5 rounded-lg border text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1 bg-slate-900 border-slate-900 text-white shadow-sm';
+      } else {
+        btn.className =
+          'touch-chip py-2 px-2.5 rounded-lg border border-transparent text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-1 text-slate-600 hover:bg-slate-50';
+      }
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    if (priorityHint) {
+      priorityHint.textContent = isUrgent
+        ? 'Atención prioritaria en mesa y taller'
+        : 'Orden regular de ingreso en taller';
+      priorityHint.className = isUrgent
+        ? 'text-[11px] font-semibold text-amber-700'
+        : 'text-[11px] font-medium text-slate-500';
+    }
   }
 
   techButtons.forEach((btn) => {
@@ -446,9 +503,11 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
     });
   });
 
-  urgentBtn.addEventListener('click', () => {
-    isUrgent = !isUrgent;
-    syncAssignmentUI();
+  priorityButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      isUrgent = btn.dataset.priority === 'Urgente / Garantía';
+      syncAssignmentUI();
+    });
   });
 
   function resetFormState() {
