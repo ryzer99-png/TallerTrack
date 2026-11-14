@@ -1,4 +1,4 @@
-import { createOrder } from '../ordersService.js';
+import { createOrder, findReturningClients } from '../ordersService.js';
 import { escapeHtml, getPublicOrderUrl, showToast } from '../utils.js';
 import { buildReceiptWhatsAppUrl } from '../whatsapp.js';
 
@@ -219,6 +219,9 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
                 </div>
               </div>
             </div>
+
+            <!-- Sugerencias de cliente frecuente (1 toque para autocompletar cliente y equipos previos) -->
+            <div id="returning-client-suggestions" class="hidden rounded-xl border border-blue-200 bg-white p-3 space-y-2"></div>
           </div>
 
           <!-- ZONA 3: DIAGNÓSTICO INICIAL -->
@@ -375,6 +378,11 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
     isEquipmentTrayOpen = false;
     selectedAccessories = new Set(['Sin accesorios']);
     container.querySelector('#observaciones').value = 'Revisar y cotizar antes de reparar';
+    const returningBox = container.querySelector('#returning-client-suggestions');
+    if (returningBox) {
+      returningBox.classList.add('hidden');
+      returningBox.innerHTML = '';
+    }
     syncEquipmentUI();
     syncAccessoriesUI();
   }
@@ -459,6 +467,113 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
       faultInput.focus();
     });
   });
+
+  const clientNameInput = container.querySelector('#cliente-nombre');
+  const clientPhoneInput = container.querySelector('#cliente-telefono');
+  const returningBox = container.querySelector('#returning-client-suggestions');
+  let clientSearchTimer = null;
+
+  function scheduleClientLookup(rawValue) {
+    clearTimeout(clientSearchTimer);
+    const val = rawValue.trim();
+    if (val.length < 3) {
+      returningBox.classList.add('hidden');
+      returningBox.innerHTML = '';
+      return;
+    }
+
+    clientSearchTimer = setTimeout(async () => {
+      try {
+        const matches = await findReturningClients(val);
+        if (!matches.length) {
+          returningBox.classList.add('hidden');
+          returningBox.innerHTML = '';
+          return;
+        }
+
+        returningBox.classList.remove('hidden');
+        returningBox.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-blue-800">
+              Clientes registrados (1 toque para autocompletar)
+            </span>
+            <button id="close-returning-box" type="button" class="text-xs font-bold text-slate-500 hover:text-slate-800">✕</button>
+          </div>
+          <div class="flex flex-col gap-2">
+            ${matches
+              .map(
+                (c, idx) => `
+              <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80">
+                <button
+                  type="button"
+                  data-pick-client="${idx}"
+                  class="text-left flex-1 min-w-[180px]"
+                >
+                  <span class="font-bold text-sm text-slate-900 block">${escapeHtml(c.nombre)}</span>
+                  <span class="font-mono text-xs text-slate-600">${escapeHtml(c.telefono)} · ${c.totalOrdenes} servicio(s)</span>
+                </button>
+                ${
+                  c.equipos.length > 0
+                    ? `<div class="flex flex-wrap gap-1.5">
+                        ${c.equipos
+                          .slice(0, 3)
+                          .map(
+                            (eq) => `
+                          <button
+                            type="button"
+                            data-pick-client-eq="${idx}"
+                            data-eq-name="${escapeHtml(eq)}"
+                            class="px-2.5 py-1 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-800 text-xs font-bold"
+                          >
+                            + ${escapeHtml(eq)}
+                          </button>
+                        `
+                          )
+                          .join('')}
+                      </div>`
+                    : ''
+                }
+              </div>
+            `
+              )
+              .join('')}
+          </div>
+        `;
+
+        returningBox.querySelector('#close-returning-box')?.addEventListener('click', () => {
+          returningBox.classList.add('hidden');
+        });
+
+        returningBox.querySelectorAll('[data-pick-client]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const picked = matches[Number(btn.dataset.pickClient)];
+            if (!picked) return;
+            clientNameInput.value = picked.nombre;
+            clientPhoneInput.value = picked.telefono;
+            returningBox.classList.add('hidden');
+          });
+        });
+
+        returningBox.querySelectorAll('[data-pick-client-eq]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const picked = matches[Number(btn.dataset.pickClientEq)];
+            if (!picked) return;
+            clientNameInput.value = picked.nombre;
+            clientPhoneInput.value = picked.telefono;
+            eqInput.value = btn.dataset.eqName;
+            isEquipmentTrayOpen = false;
+            syncEquipmentUI();
+            returningBox.classList.add('hidden');
+          });
+        });
+      } catch {
+        // Ignorar errores de autocompletado silenciosamente
+      }
+    }, 220);
+  }
+
+  clientNameInput.addEventListener('input', () => scheduleClientLookup(clientNameInput.value));
+  clientPhoneInput.addEventListener('input', () => scheduleClientLookup(clientPhoneInput.value));
 
   syncEquipmentUI();
   syncAccessoriesUI();
