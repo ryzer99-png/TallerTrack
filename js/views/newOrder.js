@@ -799,7 +799,7 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
 
   modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4';
   modalRoot.innerHTML = `
-      < div class= "bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full p-5 sm:p-7 space-y-5" >
+    <div class="bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full p-5 sm:p-7 space-y-5">
       <div class="text-center space-y-2">
         <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-800 text-3xl font-black">
           ✓
