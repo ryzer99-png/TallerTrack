@@ -78,6 +78,36 @@ export function getPublicOrderUrl(order) {
   return `${window.location.origin}/orden?id=${encodeURIComponent(idOrNum)}`;
 }
 
+export function getAgeMeta(isoString) {
+  if (!isoString) {
+    return { days: 0, label: 'Hoy', badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200', dotClass: 'bg-emerald-500' };
+  }
+  const ms = Date.now() - new Date(isoString).getTime();
+  const days = Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+  if (days >= 5) {
+    return {
+      days,
+      label: `${days} días`,
+      badgeClass: 'bg-red-50 text-red-800 border-red-200',
+      dotClass: 'bg-red-600',
+    };
+  }
+  if (days >= 2) {
+    return {
+      days,
+      label: `${days} días`,
+      badgeClass: 'bg-amber-50 text-amber-900 border-amber-200',
+      dotClass: 'bg-amber-500',
+    };
+  }
+  return {
+    days,
+    label: days === 1 ? '1 día' : 'Hoy',
+    badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    dotClass: 'bg-emerald-500',
+  };
+}
+
 export function showToast(message, variant = 'success') {
   const root = document.getElementById('toast-root');
   if (!root) return;

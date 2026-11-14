@@ -48,8 +48,10 @@ function buildAccessoriesPayload(selectedTags, detailText) {
   return 'Ninguno';
 }
 
-export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) {
+export function renderNewOrderView(container, { technicians = [], onOrderCreated, onGoToActive }) {
   let selectedAccessories = new Set(['Sin accesorios']);
+  let selectedTechnicianId = null;
+  let isUrgent = false;
   let isEquipmentTrayOpen = false;
   let isSubmitting = false;
 
@@ -278,6 +280,53 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
                 />
               </div>
             </div>
+
+            <!-- Asignar Técnico y Prioridad (compacto y táctil) -->
+            <div class="pt-2 border-t border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="space-y-1.5 flex-1">
+                <span class="block text-xs font-extrabold uppercase tracking-wider text-slate-600">
+                  Asignar Técnico
+                </span>
+                <div id="technician-chips" class="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    data-tech-id=""
+                    class="touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5"
+                  >
+                    Sin Asignar
+                  </button>
+                  ${technicians
+                    .map(
+                      (t) => `
+                    <button
+                      type="button"
+                      data-tech-id="${escapeHtml(t.id)}"
+                      data-tech-color="${escapeHtml(t.color || '#1d4ed8')}"
+                      class="touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5"
+                    >
+                      <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${escapeHtml(t.color || '#1d4ed8')}"></span>
+                      <span>${escapeHtml(t.nombre)}</span>
+                    </button>
+                  `
+                    )
+                    .join('')}
+                </div>
+              </div>
+
+              <div class="space-y-1.5 shrink-0">
+                <span class="block text-xs font-extrabold uppercase tracking-wider text-slate-600">
+                  Prioridad
+                </span>
+                <button
+                  id="priority-urgent-btn"
+                  type="button"
+                  aria-pressed="false"
+                  class="touch-chip px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-1.5 transition-colors duration-150"
+                >
+                  <span>⚡ Urgente / Garantía</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- Switch Principal de la Consola -->
@@ -371,12 +420,45 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
     });
   }
 
+  const techButtons = container.querySelectorAll('[data-tech-id]');
+  const urgentBtn = container.querySelector('#priority-urgent-btn');
+
+  function syncAssignmentUI() {
+    techButtons.forEach((btn) => {
+      const techId = btn.dataset.techId || null;
+      const active = techId === selectedTechnicianId;
+      btn.className = active
+        ? 'touch-chip px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
+        : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-slate-300';
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    urgentBtn.className = isUrgent
+      ? 'touch-chip px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-1.5 bg-red-600 text-white border-red-700 shadow-sm transition-colors duration-150'
+      : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm inline-flex items-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-red-300 hover:bg-red-50 transition-colors duration-150';
+    urgentBtn.setAttribute('aria-pressed', isUrgent ? 'true' : 'false');
+  }
+
+  techButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectedTechnicianId = btn.dataset.techId || null;
+      syncAssignmentUI();
+    });
+  });
+
+  urgentBtn.addEventListener('click', () => {
+    isUrgent = !isUrgent;
+    syncAssignmentUI();
+  });
+
   function resetFormState() {
     form.reset();
     eqInput.value = '';
     accDetailInput.value = '';
     isEquipmentTrayOpen = false;
     selectedAccessories = new Set(['Sin accesorios']);
+    selectedTechnicianId = null;
+    isUrgent = false;
     container.querySelector('#observaciones').value = 'Revisar y cotizar antes de reparar';
     const returningBox = container.querySelector('#returning-client-suggestions');
     if (returningBox) {
@@ -385,6 +467,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
     }
     syncEquipmentUI();
     syncAccessoriesUI();
+    syncAssignmentUI();
   }
 
   toggleEqTrayBtn.addEventListener('click', () => {
@@ -577,6 +660,7 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
 
   syncEquipmentUI();
   syncAccessoriesUI();
+  syncAssignmentUI();
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -623,6 +707,8 @@ export function renderNewOrderView(container, { onOrderCreated, onGoToActive }) 
         accesorios: accesoriosText,
         falla_reportada: fallaReportada,
         observaciones,
+        tecnico_id: selectedTechnicianId,
+        prioridad: isUrgent ? 'Urgente / Garantía' : 'Normal',
       });
 
       resetFormState();

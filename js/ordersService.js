@@ -95,6 +95,31 @@ export async function listOrders() {
   return data || [];
 }
 
+const DEFAULT_DEMO_TECHNICIANS = [
+  { id: 'tech-papa', nombre: 'Papá', color: '#1d4ed8', activo: true },
+  { id: 'tech-2', nombre: 'Técnico 2', color: '#0f766e', activo: true },
+  { id: 'tech-3', nombre: 'Técnico 3', color: '#7c3aed', activo: true },
+];
+
+export async function listTechnicians() {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    return DEFAULT_DEMO_TECHNICIANS;
+  }
+
+  const { data, error } = await supabase
+    .from('tecnicos')
+    .select('id, nombre, color, activo')
+    .eq('activo', true)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    // Fallback silencioso si aún no se ejecutó migration_tecnicos_pendientes.sql
+    return [];
+  }
+  return data || [];
+}
+
 export async function createOrder(payload) {
   const cleanPayload = {
     cliente_nombre: payload.cliente_nombre.trim(),
@@ -106,6 +131,9 @@ export async function createOrder(payload) {
     estado: 'Recibido',
     costo_estimado: Number(payload.costo_estimado || 0),
     impresa: false,
+    tecnico_id: payload.tecnico_id || null,
+    prioridad: payload.prioridad || 'Normal',
+    tiempo_estimado_entrega: payload.tiempo_estimado_entrega || null,
   };
 
   const supabase = getSupabaseClient();
@@ -210,6 +238,13 @@ export function subscribeToOrders({ onDataChange, onStatusChange }) {
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'ordenes' },
+      () => {
+        onDataChange?.();
+      }
+    )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'tecnicos' },
       () => {
         onDataChange?.();
       }

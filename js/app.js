@@ -4,16 +4,19 @@ import {
   isSupabaseConfigured,
   saveLocalEnvOverrides,
 } from './config.js';
-import { listOrders, subscribeToOrders } from './ordersService.js';
+import { listOrders, listTechnicians, subscribeToOrders } from './ordersService.js';
 import { escapeHtml, showToast } from './utils.js';
 import { renderActiveOrdersView } from './views/activeOrders.js';
 import { renderNewOrderView } from './views/newOrder.js';
+import { renderPendingBoardView } from './views/pendingBoard.js';
 import { renderPublicOrderView } from './views/publicOrder.js';
 
 const state = {
-  currentView: 'nueva', // 'nueva' | 'activas' | 'publica'
+  currentView: 'nueva', // 'nueva' | 'pendientes' | 'activas' | 'publica'
   publicOrderId: null,
   orders: [],
+  technicians: [],
+  selectedTechnicianFilter: 'all',
   isLoading: false,
   searchQuery: '',
   statusFilter: 'Activas',
@@ -25,6 +28,7 @@ let unsubscribeRealtime = null;
 const appRoot = document.getElementById('app-root');
 const headerEl = document.getElementById('workshop-header');
 const navNuevaBtn = document.getElementById('nav-nueva');
+const navPendientesBtn = document.getElementById('nav-pendientes');
 const navActivasBtn = document.getElementById('nav-activas');
 const activeCountBadge = document.getElementById('active-count-badge');
 const connectionBadge = document.getElementById('connection-badge');
@@ -50,11 +54,20 @@ function parseRoute() {
     return { view: 'activas', publicOrderId: null };
   }
 
+  if (hash === '#/pendientes') {
+    return { view: 'pendientes', publicOrderId: null };
+  }
+
   return { view: 'nueva', publicOrderId: null };
 }
 
 function navigateTo(view) {
-  const targetHash = view === 'activas' ? '#/activas' : '#/nueva';
+  const hashMap = {
+    activas: '#/activas',
+    pendientes: '#/pendientes',
+    nueva: '#/nueva',
+  };
+  const targetHash = hashMap[view] || '#/nueva';
   if (window.location.pathname !== '/') {
     window.history.pushState({}, '', `/${targetHash}`);
   } else {
@@ -68,14 +81,23 @@ function updateHeaderUI() {
   headerEl.classList.toggle('hidden', isPublic);
   if (isPublic) return;
 
-  const isNueva = state.currentView === 'nueva';
-  navNuevaBtn.className = isNueva
-    ?'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm transition-all duration-150'
-    : 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all duration-150';
+  const inactiveTabClass =
+    'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all duration-150';
 
-  navActivasBtn.className = !isNueva
-    ?'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-blue-600 text-white shadow-sm transition-all duration-150'
-    : 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 text-slate-300 hover:text-white hover:bg-slate-700/60 transition-all duration-150';
+  navNuevaBtn.className =
+    state.currentView === 'nueva'
+      ? 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-emerald-600 text-white shadow-sm transition-all duration-150'
+      : inactiveTabClass;
+
+  navPendientesBtn.className =
+    state.currentView === 'pendientes'
+      ? 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-indigo-600 text-white shadow-sm transition-all duration-150'
+      : inactiveTabClass;
+
+  navActivasBtn.className =
+    state.currentView === 'activas'
+      ? 'touch-btn flex-1 sm:flex-none px-3.5 sm:px-4 py-2 rounded-lg font-bold text-sm sm:text-base flex items-center justify-center gap-2 bg-blue-600 text-white shadow-sm transition-all duration-150'
+      : inactiveTabClass;
 
   const activeCount = state.orders.filter((o) => o.estado !== 'Entregado').length;
   activeCountBadge.textContent = String(activeCount);
@@ -100,6 +122,13 @@ function renderCurrentView() {
     return;
   }
 
+  if (state.currentView === 'pendientes') {
+    renderPendingBoardView(appRoot, state, {
+      onRefreshOrders: loadOrders,
+    });
+    return;
+  }
+
   if (state.currentView === 'activas') {
     renderActiveOrdersView(appRoot, state, {
       onRefreshOrders: loadOrders,
@@ -108,6 +137,7 @@ function renderCurrentView() {
   }
 
   renderNewOrderView(appRoot, {
+    technicians: state.technicians,
     onOrderCreated: () => {
       loadOrders();
     },
@@ -118,19 +148,26 @@ function renderCurrentView() {
 }
 
 async function loadOrders() {
+  const prevTechCount = state.technicians.length;
   state.isLoading = true;
-  if (state.currentView === 'activas') {
+  if (state.currentView === 'activas' || state.currentView === 'pendientes') {
     renderCurrentView();
   }
   try {
-    state.orders = await listOrders();
+    const [orders, technicians] = await Promise.all([listOrders(), listTechnicians()]);
+    state.orders = orders;
+    state.technicians = technicians;
   } catch (err) {
     console.error('Error cargando órdenes:', err);
     showToast(`No se pudieron cargar las órdenes: ${err.message}`, 'error');
   } finally {
     state.isLoading = false;
     updateHeaderUI();
-    if (state.currentView === 'activas') {
+    if (
+      state.currentView === 'activas' ||
+      state.currentView === 'pendientes' ||
+      (state.currentView === 'nueva' && prevTechCount !== state.technicians.length)
+    ) {
       renderCurrentView();
     }
   }
@@ -230,6 +267,7 @@ function openSupabaseConfigModal() {
 
 // Listeners globales
 navNuevaBtn?.addEventListener('click', () => navigateTo('nueva'));
+navPendientesBtn?.addEventListener('click', () => navigateTo('pendientes'));
 navActivasBtn?.addEventListener('click', () => navigateTo('activas'));
 openConfigBtn?.addEventListener('click', openSupabaseConfigModal);
 window.addEventListener('hashchange', handleRouteChange);
