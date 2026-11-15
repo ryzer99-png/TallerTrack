@@ -100,18 +100,18 @@ def build_label_zpl(order, public_base_url):
 
     # Prioridad máxima al nombre del cliente sin invadir la columna del QR
     if len(cliente) <= 15:
-        name_h, name_w = 56, 44
+        name_h, name_w = 54, 42
     elif len(cliente) <= 21:
-        name_h, name_w = 48, 36
+        name_h, name_w = 46, 34
     else:
-        name_h, name_w = 40, 30
+        name_h, name_w = 38, 28
 
     order_ref = order.get("id") or order.get("numero_orden")
     qr_url = f"{public_base_url.rstrip('/')}/orden?id={urllib.parse.quote(str(order_ref))}"
 
     urgent_badge = (
-        "^FO214,8^GB116,24,24^FS"
-        "^FO220,12^FR^A0N,18,18^FDURGENTE^FS"
+        "^FO190,6^GB108,26,26^FS"
+        "^FO196,11^FR^A0N,18,18^FDURGENTE^FS"
         if is_urgent
         else ""
     )
@@ -123,16 +123,16 @@ def build_label_zpl(order, public_base_url):
         "^LL280",
         "^LH0,0",
         # Banda superior a todo lo ancho: Marca + Orden secundaria + Urgente + Fecha grande
-        f"^FO12,10^A0N,20,20^FDTELERADIO  #{num}^FS",
+        f"^FO12,11^A0N,18,18^FDTELERADIO #{num}^FS",
         urgent_badge,
-        f"^FO334,10^FB214,1,0,R,0^A0N,22,22^FD{fecha}^FS",
-        "^FO12,36^GB536,2,2^FS",
-        # Columna izquierda (x=12..418): Nombre gigante, Teléfono destacado, Falla amplia y pie compacto
+        f"^FO304,8^FB244,1,0,R,0^A0N,26,26^FD{fecha}^FS",
+        "^FO12,38^GB536,2,2^FS",
+        # Columna izquierda (x=12..418): Nombre gigante, Teléfono destacado, Falla y Equipo/Accesorios legibles
         f"^FO12,44^FB406,1,0,L,0^A0N,{name_h},{name_w}^FD{cliente}^FS",
-        f"^FO12,104^A0N,32,28^FDTel: {telefono}^FS",
-        "^FO12,140^GB404,1,1^FS",
-        f"^FO12,148^FB406,2,4,L,0^A0N,26,24^FDFalla: {falla}^FS",
-        f"^FO12,218^FB406,2,2,L,0^A0N,20,20^FD{equipo} | Acc: {accesorios}^FS",
+        f"^FO12,102^A0N,32,28^FDTel: {telefono}^FS",
+        "^FO12,138^GB404,1,1^FS",
+        f"^FO12,144^FB406,2,2,L,0^A0N,26,24^FDFalla: {falla}^FS",
+        f"^FO12,210^FB406,2,3,L,0^A0N,24,24^FD{equipo} | Acc: {accesorios}^FS",
         # Columna derecha (x=426..548): QR equilibrado + N° de orden compacto
         "^FO428,46^BQN,2,3",
         f"^FDQA,{qr_url}^FS",
