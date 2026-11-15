@@ -92,19 +92,20 @@ def build_label_zpl(order, public_base_url):
     num = sanitize_zpl(order.get("numero_orden", "0000"), 10)
     cliente = sanitize_zpl(order.get("cliente_nombre", "Cliente"), 28)
     telefono = sanitize_zpl(order.get("cliente_telefono", ""), 18)
-    equipo = sanitize_zpl(order.get("tipo_equipo", "Equipo"), 28)
-    falla = sanitize_zpl(order.get("falla_reportada", ""), 66)
-    accesorios = sanitize_zpl(order.get("accesorios", "Ninguno"), 28)
+    falla = sanitize_zpl(order.get("falla_reportada", ""), 56)
+    accesorios = sanitize_zpl(order.get("accesorios", "Ninguno"), 36)
     fecha = format_short_date(order.get("fecha_ingreso"))
     is_urgent = order.get("prioridad") == "Urgente / Garantía"
 
     # Prioridad máxima al nombre del cliente sin invadir la columna del QR
-    if len(cliente) <= 15:
-        name_h, name_w = 54, 42
-    elif len(cliente) <= 21:
-        name_h, name_w = 46, 34
+    if len(cliente) <= 14:
+        name_h, name_w = 58, 42
+    elif len(cliente) <= 18:
+        name_h, name_w = 50, 36
+    elif len(cliente) <= 23:
+        name_h, name_w = 42, 30
     else:
-        name_h, name_w = 38, 28
+        name_h, name_w = 36, 26
 
     order_ref = order.get("id") or order.get("numero_orden")
     qr_url = f"{public_base_url.rstrip('/')}/orden?id={urllib.parse.quote(str(order_ref))}"
@@ -127,17 +128,17 @@ def build_label_zpl(order, public_base_url):
         urgent_badge,
         f"^FO304,8^FB244,1,0,R,0^A0N,26,26^FD{fecha}^FS",
         "^FO12,38^GB536,2,2^FS",
-        # Columna izquierda (x=12..418): Nombre gigante, Teléfono destacado, Falla y Equipo/Accesorios legibles
-        f"^FO12,44^FB406,1,0,L,0^A0N,{name_h},{name_w}^FD{cliente}^FS",
-        f"^FO12,102^A0N,32,28^FDTel: {telefono}^FS",
-        "^FO12,138^GB404,1,1^FS",
-        f"^FO12,144^FB406,2,2,L,0^A0N,26,24^FDFalla: {falla}^FS",
-        f"^FO12,210^FB406,2,3,L,0^A0N,24,24^FD{equipo} | Acc: {accesorios}^FS",
-        # Columna derecha (x=426..548): QR equilibrado + N° de orden compacto
-        "^FO428,46^BQN,2,3",
+        # Columna izquierda (x=12..394): Nombre gigante, Teléfono, Falla y Accesorios aprovechando todo el alto
+        f"^FO12,44^FB382,1,0,L,0^A0N,{name_h},{name_w}^FD{cliente}^FS",
+        f"^FO12,106^FB382,1,0,L,0^A0N,38,32^FDTel: {telefono}^FS",
+        "^FO12,148^GB380,1,1^FS",
+        f"^FO12,154^FB382,2,2,L,0^A0N,32,28^FDFalla: {falla}^FS",
+        f"^FO12,222^FB382,2,2,L,0^A0N,28,26^FDAcc: {accesorios}^FS",
+        # Columna derecha (x=402..534): QR corrido a la izquierda sin recorte + N° de orden debajo
+        "^FO402,44^BQN,2,3",
         f"^FDQA,{qr_url}^FS",
-        f"^FO422,182^FB126,1,0,C,0^A0N,22,22^FD#{num}^FS",
-        "^FO422,208^FB126,1,0,C,0^A0N,16,16^FDEscanear QR^FS",
+        f"^FO396,198^FB138,1,0,C,0^A0N,22,22^FD#{num}^FS",
+        "^FO396,224^FB138,1,0,C,0^A0N,16,16^FDEscanear QR^FS",
         "^XZ",
     ]
     return "\n".join(line for line in lines if line) + "\n"
