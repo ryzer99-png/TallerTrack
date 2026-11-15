@@ -90,51 +90,53 @@ def build_label_zpl(order, public_base_url):
       - Alto:  280 dots (^LL280)
     """
     num = sanitize_zpl(order.get("numero_orden", "0000"), 10)
-    cliente = sanitize_zpl(order.get("cliente_nombre", "Cliente"), 24)
+    cliente = sanitize_zpl(order.get("cliente_nombre", "Cliente"), 26)
     telefono = sanitize_zpl(order.get("cliente_telefono", ""), 18)
     equipo = sanitize_zpl(order.get("tipo_equipo", "Equipo"), 26)
-    falla = sanitize_zpl(order.get("falla_reportada", ""), 56)
+    falla = sanitize_zpl(order.get("falla_reportada", ""), 54)
     accesorios = sanitize_zpl(order.get("accesorios", "Ninguno"), 28)
     fecha = format_short_date(order.get("fecha_ingreso"))
     is_urgent = order.get("prioridad") == "Urgente / Garantía"
+
+    # Tamaño grande para el nombre del cliente, ajustado solo si es muy largo para no invadir el QR
+    name_size = 36 if len(cliente) <= 16 else (30 if len(cliente) <= 21 else 26)
 
     order_ref = order.get("id") or order.get("numero_orden")
     qr_url = f"{public_base_url.rstrip('/')}/orden?id={urllib.parse.quote(str(order_ref))}"
 
     urgent_badge = (
-        "^FO235,14^GB132,32,32^FS"
-        "^FO241,20^FR^A0N,22,22^FDURGENTE^FS"
+        "^FO238,10^GB128,28,28^FS"
+        "^FO244,15^FR^A0N,20,20^FDURGENTE^FS"
         if is_urgent
         else ""
     )
 
-    zpl = "\n".join(
-        [
-            "^XA",
-            "^CI28",
-            "^PW560",
-            "^LL280",
-            "^LH0,0",
-            # Encabezado: Marca + N° de orden + badge Urgente opcional
-            "^FO16,14^A0N,24,24^FDTELERADIO^FS",
-            f"^FO16,42^A0N,40,40^FD#{num}^FS",
-            urgent_badge,
-            f"^FO16,86^A0N,18,18^FD{fecha}^FS",
-            "^FO16,108^GB352,2,2^FS",
-            # Datos principales en columna izquierda (x=16..370)
-            f"^FO16,118^A0N,24,24^FD{cliente}^FS",
-            f"^FO16,146^A0N,20,20^FDTel: {telefono}^FS",
-            f"^FO16,172^A0N,22,22^FD{equipo}^FS",
-            f"^FO16,198^FB354,2,2,L,0^A0N,20,20^FDFalla: {falla}^FS",
-            f"^FO16,246^A0N,18,18^FDAcc: {accesorios}^FS",
-            # Columna derecha: QR de seguimiento + numero abajo
-            "^FO382,18^BQN,2,4",
-            f"^FDQA,{qr_url}^FS",
-            f"^FO382,236^FB162,1,0,C,0^A0N,22,22^FD#{num}^FS",
-            "^XZ",
-        ]
-    )
-    return zpl + "\n"
+    lines = [
+        "^XA",
+        "^CI28",
+        "^PW560",
+        "^LL280",
+        "^LH0,0",
+        # Encabezado: Marca + badge Urgente opcional + N° de orden + fecha
+        "^FO20,12^A0N,22,22^FDTELERADIO^FS",
+        urgent_badge,
+        f"^FO20,38^A0N,38,38^FD#{num}^FS",
+        f"^FO150,50^A0N,18,18^FD{fecha}^FS",
+        "^FO20,78^GB348,2,2^FS",
+        # Nombre del cliente destacado en grande
+        f"^FO20,86^A0N,{name_size},{name_size}^FD{cliente}^FS",
+        # Teléfono, equipo, falla y accesorios
+        f"^FO20,128^A0N,22,22^FDTel: {telefono}^FS",
+        f"^FO20,154^A0N,24,24^FD{equipo}^FS",
+        f"^FO20,184^FB350,2,2,L,0^A0N,20,20^FDFalla: {falla}^FS",
+        f"^FO20,238^A0N,18,18^FDAcc: {accesorios}^FS",
+        # Columna derecha: QR de seguimiento + numero abajo
+        "^FO382,18^BQN,2,4",
+        f"^FDQA,{qr_url}^FS",
+        f"^FO382,236^FB162,1,0,C,0^A0N,22,22^FD#{num}^FS",
+        "^XZ",
+    ]
+    return "\n".join(line for line in lines if line) + "\n"
 
 
 def supabase_request(url, anon_key, method="GET", body=None):
