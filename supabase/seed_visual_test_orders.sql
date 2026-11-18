@@ -111,3 +111,4 @@ from seed_rows s;
 -- LIMPIEZA: Cuando termines tus pruebas visuales, ejecuta solo esta línea:
 -- delete from public.ordenes where observaciones like '%[Prueba visual]%';
 -- ============================================================================
+
