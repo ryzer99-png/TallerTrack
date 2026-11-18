@@ -233,7 +233,7 @@ def main():
     parser.add_argument("--printer", default=cfg.get("PRINTER_NAME"), help="Nombre de impresora en CUPS")
     parser.add_argument(
         "--public-url",
-        default=cfg.get("PUBLIC_BASE_URL") or "https://charming-halva-fd6269.netlify.app",
+        default=cfg.get("PUBLIC_BASE_URL") or "https://teleradios.netlify.app",
         help="URL base pública para el código QR",
     )
     parser.add_argument("--interval", type=float, default=3.0, help="Segundos entre consultas (default 3)")
