@@ -6,6 +6,7 @@ import {
 } from './config.js';
 import { openGlobalSearchModal } from './globalSearchModal.js';
 import { listOrders, listTechnicians, subscribeToOrders } from './ordersService.js';
+import { initPwa } from './pwa.js';
 import { escapeHtml, showToast } from './utils.js';
 import { renderActiveOrdersView } from './views/activeOrders.js';
 import { renderDeliveredOrdersView } from './views/deliveredOrders.js';
@@ -332,6 +333,9 @@ window.addEventListener('hashchange', handleRouteChange);
 window.addEventListener('popstate', handleRouteChange);
 
 // Arranque
+initPwa({
+  onInstalled: () => showToast('App instalada en tu dispositivo'),
+});
 handleRouteChange();
 initRealtime();
 if (state.currentView !== 'publica') {
