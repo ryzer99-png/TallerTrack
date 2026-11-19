@@ -57,3 +57,4 @@ export function initPwa({ installBtnId = 'install-pwa-btn', onInstalled } = {}) 
     onInstalled?.();
   });
 }
+
