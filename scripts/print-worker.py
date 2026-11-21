@@ -22,7 +22,14 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+try:
+    from zoneinfo import ZoneInfo
+
+    CO_TZ = ZoneInfo("America/Bogota")
+except Exception:
+    CO_TZ = timezone(timedelta(hours=-5))
 
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -75,10 +82,14 @@ def sanitize_zpl(text, max_len=None):
 
 def format_short_date(iso_str):
     if not iso_str:
-        return datetime.now().strftime("%d/%m %H:%M")
+        dt = datetime.now(CO_TZ)
+        return dt.strftime("%d/%m/%y ") + dt.strftime("%I:%M %p").lstrip("0")
     try:
-        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00")).astimezone()
-        return dt.strftime("%d/%m/%y %H:%M")
+        dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        dt = dt.astimezone(CO_TZ)
+        return dt.strftime("%d/%m/%y ") + dt.strftime("%I:%M %p").lstrip("0")
     except Exception:
         return str(iso_str)[:16]
 
@@ -126,7 +137,7 @@ def build_label_zpl(order, public_base_url):
         # Banda superior a todo lo ancho: Marca + Orden secundaria + Urgente + Fecha grande
         f"^FO12,11^A0N,18,18^FDTELERADIO #{num}^FS",
         urgent_badge,
-        f"^FO304,8^FB244,1,0,R,0^A0N,26,26^FD{fecha}^FS",
+        f"^FO302,9^FB246,1,0,R,0^A0N,24,24^FD{fecha}^FS",
         "^FO12,38^GB536,2,2^FS",
         # Columna izquierda (x=12..394): Nombre gigante, Teléfono, Falla y Accesorios aprovechando todo el alto
         f"^FO12,44^FB382,1,0,L,0^A0N,{name_h},{name_w}^FD{cliente}^FS",
@@ -233,7 +244,7 @@ def main():
     parser.add_argument("--printer", default=cfg.get("PRINTER_NAME"), help="Nombre de impresora en CUPS")
     parser.add_argument(
         "--public-url",
-        default=cfg.get("PUBLIC_BASE_URL") or "https://teleradios.netlify.app",
+        default=cfg.get("PUBLIC_BASE_URL") or "https://tallertrack.pages.dev",
         help="URL base pública para el código QR",
     )
     parser.add_argument("--interval", type=float, default=3.0, help="Segundos entre consultas (default 3)")
