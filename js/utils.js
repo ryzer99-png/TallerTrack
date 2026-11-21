@@ -3,6 +3,8 @@ export const ORDER_STATES = [
   'En Revisión',
   'Por Aprobar',
   'Reparado',
+  'Sin Reparación',
+  'Sin Falla',
   'Entregado',
 ];
 
@@ -34,6 +36,20 @@ export const STATUS_META = {
     badgeClass: 'bg-emerald-100 text-emerald-950 border-emerald-600',
     stepIndex: 3,
     description: '¡Tu equipo ya está reparado y listo para recoger en Teleradio!',
+  },
+  'Sin Reparación': {
+    label: 'Sin Reparación',
+    shortLabel: 'Sin Reparación',
+    badgeClass: 'bg-rose-100 text-rose-950 border-rose-500',
+    stepIndex: 3,
+    description: 'Revisamos tu equipo pero lamentablemente no fue posible repararlo. Ya puedes pasar a recogerlo.',
+  },
+  'Sin Falla': {
+    label: 'Sin Falla',
+    shortLabel: 'Estaba Bueno',
+    badgeClass: 'bg-teal-100 text-teal-950 border-teal-500',
+    stepIndex: 3,
+    description: 'Probamos tu equipo en taller y funcionó correctamente sin presentar falla. Ya está listo para recoger.',
   },
   'Entregado': {
     label: 'Entregado',

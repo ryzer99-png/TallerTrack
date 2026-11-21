@@ -27,6 +27,7 @@ const BOARD_COLUMNS = [
   },
   {
     estado: 'Reparado',
+    estados: ['Reparado', 'Sin Reparación', 'Sin Falla'],
     title: 'Listo para Entrega',
     dotClass: 'bg-emerald-600',
     nextEstado: 'Entregado',
@@ -98,7 +99,11 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
       value: filteredOrders.filter((o) => o.estado === 'En Revisión' || o.estado === 'Por Aprobar').length,
       accent: 'border-t-indigo-600',
     },
-    { label: 'Listos para Entrega', value: filteredOrders.filter((o) => o.estado === 'Reparado').length, accent: 'border-t-emerald-600' },
+    {
+      label: 'Listos para Entrega',
+      value: filteredOrders.filter((o) => o.estado === 'Reparado' || o.estado === 'Sin Reparación' || o.estado === 'Sin Falla').length,
+      accent: 'border-t-emerald-600',
+    },
   ];
 
   container.innerHTML = `
@@ -204,7 +209,9 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
           ? '<div class="bg-white rounded-xl border border-slate-200 p-8 text-center font-bold text-slate-600">Cargando tablero del taller...</div>'
           : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
               ${BOARD_COLUMNS.map((col) => {
-                const colOrders = filteredOrders.filter((o) => o.estado === col.estado);
+                const colOrders = filteredOrders.filter((o) =>
+                  col.estados ? col.estados.includes(o.estado) : o.estado === col.estado
+                );
                 return `
                   <div
                     data-drop-estado="${escapeHtml(col.estado)}"
@@ -362,6 +369,13 @@ function renderWorkCard(order, col, technicians, techMap) {
           #${escapeHtml(order.numero_orden)}
         </span>
         <div class="flex items-center gap-1.5 flex-wrap justify-end">
+          ${
+            order.estado === 'Sin Reparación'
+              ? '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">Sin Reparación</span>'
+              : order.estado === 'Sin Falla'
+                ? '<span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-bold">Estaba Bueno</span>'
+                : ''
+          }
           ${
             isUrgent
               ? '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold uppercase">⚡ Urgente</span>'

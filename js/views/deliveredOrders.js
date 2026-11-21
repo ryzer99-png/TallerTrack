@@ -8,7 +8,6 @@ import {
   renderPaginationBar,
   showToast,
 } from '../utils.js';
-import { buildStatusWhatsAppUrl } from '../whatsapp.js';
 
 export function renderDeliveredOrdersView(container, state, { onRefreshOrders }) {
   const { orders, technicians, isLoading } = state;
@@ -155,7 +154,6 @@ function renderDeliveredCard(order, techMap) {
   const tech = order.tecnico_id ? techMap.get(String(order.tecnico_id)) : null;
   const costo = Number(order.costo_estimado || 0);
   const publicUrl = getPublicOrderUrl(order);
-  const waUrl = buildStatusWhatsAppUrl(order);
 
   const obsLines = String(order.observaciones || '')
     .split('\n')
@@ -237,14 +235,6 @@ function renderDeliveredCard(order, techMap) {
             class="touch-btn px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-bold text-sm flex items-center"
           >
             👁️ Ficha
-          </a>
-          <a
-            href="${escapeHtml(waUrl)}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="touch-btn px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-sm flex items-center"
-          >
-            📲 WhatsApp
           </a>
         </div>
 

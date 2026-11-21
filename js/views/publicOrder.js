@@ -4,7 +4,6 @@ import {
   escapeHtml,
   formatCurrency,
   formatDateTime,
-  ORDER_STATES,
   STATUS_META,
 } from '../utils.js';
 import { buildWorkshopContactWhatsAppUrl } from '../whatsapp.js';
@@ -43,6 +42,22 @@ export async function renderPublicOrderView(container, orderId) {
     const currentStep = meta.stepIndex;
     const contactUrl = buildWorkshopContactWhatsAppUrl(order);
     const costo = Number(order.costo_estimado || 0);
+    const step4Label =
+      order.estado === 'Sin Reparación' || order.estado === 'Sin Falla'
+        ? order.estado
+        : 'Reparado';
+    const progressSteps = ['Recibido', 'En Revisión', 'Por Aprobar', step4Label, 'Entregado'];
+    const priceLabel =
+      order.estado === 'Reparado' || order.estado === 'Entregado'
+        ? 'Total a pagar'
+        : order.estado === 'Sin Reparación' || order.estado === 'Sin Falla'
+          ? 'Valor de revisión'
+          : 'Valor estimado';
+    const isFinished =
+      order.estado === 'Reparado' ||
+      order.estado === 'Sin Reparación' ||
+      order.estado === 'Sin Falla' ||
+      order.estado === 'Entregado';
 
     container.innerHTML = `
       <div class="max-w-xl mx-auto space-y-4">
@@ -73,7 +88,7 @@ export async function renderPublicOrderView(container, orderId) {
 
           <!-- Línea de progreso de 5 pasos -->
           <div class="pt-2 space-y-2">
-            ${ORDER_STATES.map((stepName, idx) => {
+            ${progressSteps.map((stepName, idx) => {
               const done = idx < currentStep;
               const current = idx === currentStep;
               return `
@@ -148,7 +163,7 @@ export async function renderPublicOrderView(container, orderId) {
                 ? `
               <div class="sm:col-span-2 bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span class="block text-xs font-black uppercase tracking-wider text-amber-900">Precio de Reparación</span>
+                  <span class="block text-xs font-black uppercase tracking-wider text-amber-900">${escapeHtml(priceLabel)}</span>
                   ${
                     order.estado === 'Por Aprobar'
                       ? '<span class="text-xs font-semibold text-amber-800">Pendiente de tu aprobación para iniciar</span>'
@@ -160,8 +175,8 @@ export async function renderPublicOrderView(container, orderId) {
             `
                 : `
               <div class="sm:col-span-2 bg-slate-50 border border-slate-200 rounded-2xl p-3.5 flex items-center justify-between gap-2">
-                <span class="text-xs font-black uppercase tracking-wider text-slate-600">Precio de Reparación</span>
-                <span class="text-sm font-bold text-slate-500">Por definir (en revisión técnica)</span>
+                <span class="text-xs font-black uppercase tracking-wider text-slate-600">${escapeHtml(priceLabel)}</span>
+                <span class="text-sm font-bold text-slate-500">${isFinished ? 'Sin costo' : 'Por definir (en revisión técnica)'}</span>
               </div>
             `
             }

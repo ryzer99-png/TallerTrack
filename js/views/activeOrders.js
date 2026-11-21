@@ -18,12 +18,16 @@ const FILTER_OPTIONS = [
   { id: 'En Revisión', label: 'En Revisión' },
   { id: 'Por Aprobar', label: 'Por Aprobar' },
   { id: 'Reparado', label: 'Reparado' },
+  { id: 'Sin Reparación', label: 'Sin Reparación' },
+  { id: 'Sin Falla', label: 'Estaba Bueno' },
 ];
 
 const QUICK_STATUS_BUTTONS = [
   { estado: 'En Revisión', label: 'En Revisión' },
   { estado: 'Por Aprobar', label: 'Avisar Cotización' },
   { estado: 'Reparado', label: 'Listo / Reparado' },
+  { estado: 'Sin Reparación', label: 'Sin Reparación' },
+  { estado: 'Sin Falla', label: 'Estaba Bueno' },
   { estado: 'Entregado', label: 'Entregado' },
 ];
 
@@ -293,7 +297,7 @@ function renderOrderCard(order, techMap) {
         <span class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
           Cambiar estado (1 toque):
         </span>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           ${QUICK_STATUS_BUTTONS.map((btn) => {
       const isCurrent = order.estado === btn.estado;
       return `

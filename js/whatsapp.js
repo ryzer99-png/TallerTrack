@@ -40,10 +40,16 @@ export function buildReceiptWhatsAppUrl(order) {
 }
 
 export function buildStatusWhatsAppUrl(order) {
+  if (order.estado === 'Entregado') {
+    return '';
+  }
+
   const phone = normalizeWhatsAppPhone(order.cliente_telefono);
   const publicUrl = getPublicOrderUrl(order);
   const costo = Number(order.costo_estimado || 0);
-  const costoText = costo > 0 ? `\n*Valor estimado:* ${formatCurrency(costo)}` : '';
+  const estimatedText = costo > 0 ? `\n*Valor estimado:* ${formatCurrency(costo)}` : '';
+  const totalText = costo > 0 ? `\n*Total a pagar:* ${formatCurrency(costo)}` : '';
+  const revisionText = costo > 0 ? `\n*Valor de revisión:* ${formatCurrency(costo)}` : '';
 
   let body = '';
   switch (order.estado) {
@@ -51,13 +57,16 @@ export function buildStatusWhatsAppUrl(order) {
       body = `Hola ${order.cliente_nombre}, te saludamos de *Teleradio*. Tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*) ya está *en revisión técnica*. Te avisaremos apenas tengamos el diagnóstico.`;
       break;
     case 'Por Aprobar':
-      body = `Hola ${order.cliente_nombre}, te saludamos de *Teleradio*. Ya revisamos tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*).${costoText}\n¿Nos confirmas si autorizas la reparación?`;
+      body = `Hola ${order.cliente_nombre}, te saludamos de *Teleradio*. Ya revisamos tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*).${estimatedText}\n¿Nos confirmas si autorizas la reparación?`;
       break;
     case 'Reparado':
-      body = `¡Hola ${order.cliente_nombre}! Buenas noticias de *Teleradio*: tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*) *ya está reparado y listo para recoger*.${costoText}\nTe esperamos en el taller.`;
+      body = `¡Hola ${order.cliente_nombre}! Buenas noticias de *Teleradio*: tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*) *ya está reparado y listo para recoger*.${totalText}\nTe esperamos en el taller.`;
       break;
-    case 'Entregado':
-      body = `Hola ${order.cliente_nombre}, gracias por confiar en *Teleradio*. Confirmamos la entrega de tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*). ¡Quedamos a tu servicio!`;
+    case 'Sin Reparación':
+      body = `Hola ${order.cliente_nombre}, te saludamos de *Teleradio*. Revisamos tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*), pero lamentablemente *no tiene reparación*.${revisionText}\nYa puedes pasar a recogerlo en el taller.`;
+      break;
+    case 'Sin Falla':
+      body = `Hola ${order.cliente_nombre}, te saludamos de *Teleradio*. Probamos tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*) y *funcionó correctamente (no presentó falla)*.${revisionText}\nYa puedes pasar a recogerlo en el taller.`;
       break;
     default:
       body = `Hola ${order.cliente_nombre}, te escribimos de *Teleradio* respecto a tu *${order.tipo_equipo}* (Orden *#${order.numero_orden}*).`;

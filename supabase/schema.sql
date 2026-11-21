@@ -20,7 +20,7 @@ create table if not exists public.ordenes (
   falla_reportada text not null,
   observaciones text not null default 'Revisar y cotizar antes de reparar',
   estado text not null default 'Recibido'
-    check (estado in ('Recibido', 'En Revisión', 'Por Aprobar', 'Reparado', 'Entregado')),
+    check (estado in ('Recibido', 'En Revisión', 'Por Aprobar', 'Reparado', 'Sin Reparación', 'Sin Falla', 'Entregado')),
   costo_estimado numeric(12, 2) not null default 0,
   impresa boolean not null default false
 );
