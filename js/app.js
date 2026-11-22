@@ -47,10 +47,11 @@ const openGlobalSearchBtn = document.getElementById('open-global-search-btn');
 function parseRoute() {
   const { pathname, search, hash } = window.location;
   const params = new URLSearchParams(search);
+  const queryOrderId = params.get('id') || params.get('n');
 
-  // Soporta /orden?id=... o #/orden?id=...
-  if (pathname === '/orden' || pathname.startsWith('/orden/')) {
-    return { view: 'publica', publicOrderId: params.get('id') || params.get('n') };
+  // Soporta /orden?id=..., /orden/?id=... o /?id=... (tras Pretty URLs de Cloudflare Pages)
+  if (pathname === '/orden' || pathname.startsWith('/orden/') || queryOrderId) {
+    return { view: 'publica', publicOrderId: queryOrderId };
   }
 
   if (hash.startsWith('#/orden')) {
