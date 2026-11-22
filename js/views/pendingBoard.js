@@ -200,9 +200,8 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
       <!-- C. Tablero de Estados (4 columnas full-width con scroll independiente en desktop) -->
       ${isLoading
       ? '<div class="bg-white rounded-xl border border-slate-200 p-8 text-center font-bold text-slate-600">Cargando tablero del taller...</div>'
-          : `< div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start" >
-    ${
-      BOARD_COLUMNS.map((col) => {
+      : `<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
+    ${BOARD_COLUMNS.map((col) => {
         const colOrders = filteredOrders.filter((o) =>
           col.estados ? col.estados.includes(o.estado) : o.estado === col.estado
         );
@@ -221,16 +220,16 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
 
                     ${colOrders.length === 0
             ? '<p class="text-xs font-semibold text-slate-400 text-center py-8 mt-3 border border-dashed border-slate-300/70 rounded-xl bg-white/40">Sin equipos</p>'
-                        : `< div class="xl:max-h-[calc(100vh-295px)] xl:overflow-y-auto scrollbar-thin pr-1 mt-3 space-y-2.5" >
-          ${ colOrders.map((o) => renderWorkCard(o, col, technicians, techMap)).join('') }
-                          </div > `
-                    }
+            : `<div class="xl:max-h-[calc(100vh-295px)] xl:overflow-y-auto scrollbar-thin pr-1 mt-3 space-y-2.5">
+          ${colOrders.map((o) => renderWorkCard(o, col, technicians, techMap)).join('')}
+                          </div>`
+          }
                   </div>
                 `;
       }).join('')
-  }
-            </div > `
       }
+            </div>`
+    }
     </section>
   `;
 

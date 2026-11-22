@@ -306,58 +306,58 @@ function renderOrderCard(order, techMap) {
                 data-id="${escapeHtml(order.id)}"
                 data-estado="${escapeHtml(btn.estado)}"
                 class="touch-chip px-3 py-2.5 rounded-xl border-2 font-extrabold text-xs sm:text-sm text-center ${isCurrent
-        ? 'bg-blue-700 text-white border-blue-900 shadow'
-        : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
-    }"
+          ? 'bg-blue-700 text-white border-blue-900 shadow'
+          : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
+        }"
     >
-    ${ escapeHtml(btn.label)}
+    ${escapeHtml(btn.label)}
               </button>
             `;
-}).join('')}
-        </div >
-      </div >
+    }).join('')}
+        </div>
+      </div>
 
-      < !--Acciones rápidas: Costo + WhatsApp + Enlace Público-- >
-  <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t-2 border-slate-200">
-    <div class="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        data-action="edit-cost"
-        data-id="${escapeHtml(order.id)}"
-        class="touch-btn px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-extrabold text-sm sm:text-base"
-      >
-        💰 Precio Reparación: ${costo > 0 ? escapeHtml(formatCurrency(costo)) : 'Asignar'}
-      </button>
+      <!-- Acciones rápidas: Costo + WhatsApp + Enlace Público -->
+      <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between gap-2 pt-2.5 border-t-2 border-slate-200">
+        <div class="contents sm:flex sm:flex-wrap sm:items-center sm:gap-2">
+          <button
+            type="button"
+            data-action="edit-cost"
+            data-id="${escapeHtml(order.id)}"
+            class="col-span-2 sm:col-span-1 w-full sm:w-auto touch-btn px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-extrabold text-sm sm:text-base text-center"
+          >
+            💰 Precio Reparación: ${costo > 0 ? escapeHtml(formatCurrency(costo)) : 'Asignar'}
+          </button>
 
-      <button
-        type="button"
-        data-action="copy-link"
-        data-id="${escapeHtml(order.id)}"
-        class="touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm"
-      >
-        🔗 Link QR
-      </button>
+          <button
+            type="button"
+            data-action="copy-link"
+            data-id="${escapeHtml(order.id)}"
+            class="w-full sm:w-auto touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm flex items-center justify-center gap-1"
+          >
+            🔗 Link QR
+          </button>
 
-      <a
-        href="${escapeHtml(publicUrl)}"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm flex items-center"
-      >
-        👁️ Ficha
-      </a>
-    </div>
+          <a
+            href="${escapeHtml(publicUrl)}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full sm:w-auto touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm flex items-center justify-center gap-1"
+          >
+            👁️ Ficha
+          </a>
+        </div>
 
-    <a
-      href="${escapeHtml(waUrl)}"
-      target="_blank"
-      rel="noopener noreferrer"
-      class="touch-btn w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white border-2 border-emerald-800 font-black text-base flex items-center justify-center gap-2 shadow-sm"
-    >
-      <span>📲 Avisar por WhatsApp</span>
-    </a>
-  </div>
-    </article >
+        <a
+          href="${escapeHtml(waUrl)}"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="col-span-2 w-full sm:w-auto touch-btn px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white border-2 border-emerald-800 font-black text-base flex items-center justify-center gap-2 shadow-sm"
+        >
+          <span>📲 Avisar por WhatsApp</span>
+        </a>
+      </div>
+    </article>
   `;
 }
 
@@ -384,7 +384,7 @@ function openCostModal(order, onRefreshOrders) {
 
   modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-3 sm:p-4';
   modalRoot.innerHTML = `
-  < div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4" >
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4">
       <div class="flex items-center justify-between gap-2">
         <h3 class="text-lg sm:text-xl font-black text-slate-900">Precio de Reparación #${escapeHtml(order.numero_orden)}</h3>
         <button id="close-cost-modal" type="button" class="touch-btn min-w-[44px] px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 font-black" aria-label="Cerrar">✕</button>
@@ -449,7 +449,7 @@ function openCostModal(order, onRefreshOrders) {
           Cancelar
         </button>
       </form>
-    </div >
+    </div>
   `;
 
   const closeModal = () => {
@@ -480,33 +480,33 @@ function openCostModal(order, onRefreshOrders) {
   modalRoot.querySelector('#close-cost-modal').addEventListener('click', closeModal);
   modalRoot.querySelector('#cancel-cost-modal').addEventListener('click', closeModal);
 
-    async function saveCost(alsoSetRepaired) {
-      const val = parseCopInput(costInput.value);
-      const patch = { costo_estimado: val };
-        if (alsoSetRepaired) {
-          patch.estado = 'Reparado';
-        }
-        try {
-          await updateOrder(order.id, patch);
-          showToast(
+  async function saveCost(alsoSetRepaired) {
+    const val = parseCopInput(costInput.value);
+    const patch = { costo_estimado: val };
+    if (alsoSetRepaired) {
+      patch.estado = 'Reparado';
+    }
+    try {
+      await updateOrder(order.id, patch);
+      showToast(
         alsoSetRepaired
-              ? 'Precio guardado y marcado "Reparado"'
-              : 'Precio de reparación actualizado'
-          );
-          closeModal();
-          await onRefreshOrders?.();
-        } catch (err) {
-          showToast(`Error: ${ err.message } `, 'error');
-        }
-      }
+          ? 'Precio guardado y marcado "Reparado"'
+          : 'Precio de reparación actualizado'
+      );
+      closeModal();
+      await onRefreshOrders?.();
+    } catch (err) {
+      showToast(`Error: ${err.message} `, 'error');
+    }
+  }
 
-      modalRoot.querySelector('#cost-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        saveCost(false);
-      });
+  modalRoot.querySelector('#cost-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    saveCost(false);
+  });
 
-        modalRoot.querySelector('#save-and-repaired-btn').addEventListener('click', () => {
-          saveCost(true);
-        });
-      }
+  modalRoot.querySelector('#save-and-repaired-btn').addEventListener('click', () => {
+    saveCost(true);
+  });
+}
 

@@ -504,10 +504,9 @@ export function renderNewOrderView(container, { technicians = [], getOrders = ()
           ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
           : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
       }"
-      >
-      ${ escapeHtml(item.label)
-  }
-          </button >
+          >
+            ${escapeHtml(item.label)}
+          </button>
     `;
       })
       .join('');
@@ -556,7 +555,7 @@ export function renderNewOrderView(container, { technicians = [], getOrders = ()
         : 'touch-chip py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700';
 
       const dotHtml = techColor
-        ? `< span class="w-2.5 h-2.5 rounded-full shrink-0 ${active ? 'ring-1 ring-white/60' : ''}" style = "background-color: ${escapeHtml(techColor)}" ></span > `
+        ? `<span class="w-2.5 h-2.5 rounded-full shrink-0 ${active ? 'ring-1 ring-white/60' : ''}" style="background-color: ${escapeHtml(techColor)}"></span>`
         : '';
 
       btn.innerHTML = `${ active ? checkIcon : dotHtml } <span class="truncate">${escapeHtml(techName)}</span>`;
@@ -729,12 +728,12 @@ export function renderNewOrderView(container, { technicians = [], getOrders = ()
 
         returningBox.classList.remove('hidden');
         returningBox.innerHTML = `
-    < div class="flex items-center justify-between gap-2" >
+          <div class="flex items-center justify-between gap-2">
             <span class="text-[11px] font-extrabold uppercase tracking-wider text-blue-800">
               Clientes registrados (1 toque para autocompletar)
             </span>
             <button id="close-returning-box" type="button" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-sm font-bold text-slate-500 hover:text-slate-800" aria-label="Cerrar sugerencias">✕</button>
-          </div >
+          </div>
     <div class="flex flex-col gap-2">
       ${matches
         .map(
@@ -892,7 +891,7 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
 
   modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-3 sm:p-4';
   modalRoot.innerHTML = `
-    < div class="relative bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5" >
+    <div class="relative bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
       <button
         id="close-confirm-modal-top"
         type="button"
@@ -963,7 +962,7 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
           Ver Tablero
         </button>
       </div>
-    </div >
+    </div>
     `;
 
   const closeModal = () => {
