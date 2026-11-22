@@ -121,6 +121,14 @@ export async function validarCodigoTaller(codigo) {
 
     if (error) {
       const msg = String(error.message || '').toLowerCase();
+      if (error.code === 'P0001' || msg.includes('demasiados intentos')) {
+        return {
+          ok: false,
+          reason: 'rate_limited',
+          message:
+            error.message || 'Demasiados intentos fallidos. Espera 15 minutos e intenta nuevamente.',
+        };
+      }
       if (
         error.code === 'PGRST202' ||
         error.code === '42883' ||
@@ -241,6 +249,16 @@ export async function comprobarAutorizacion({ onAuthorized, onLockStateChange } 
       onLockStateChange?.(false);
       await onAuthorized?.({ offlineBypass: true });
       return true;
+    }
+
+    if (result.reason === 'rate_limited') {
+      // Conservar token guardado mientras expire la pausa por intentos desde la misma IP
+      showAuthLockScreen({
+        message: result.message,
+        type: 'error',
+        loading: false,
+      });
+      return false;
     }
 
     clearStoredAuthToken();

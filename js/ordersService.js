@@ -409,15 +409,20 @@ export async function findReturningClients(rawQuery) {
   }
 
   // Intentar consultar la tabla normalizada `clientes` (con `equipos` y conteo de `ordenes`)
-  const filterExpr =
-    digits.length >= 3
-      ? `telefono_normalizado.ilike.%${digits}%,nombre.ilike.%${q}%`
-      : `nombre.ilike.%${q}%`;
+  const safeName = q.replace(/[,().*%\\]/g, ' ').replace(/\s+/g, ' ').trim();
+  const orParts = [];
+  if (digits.length >= 3) {
+    orParts.push(`telefono_normalizado.ilike.%${digits}%`);
+  }
+  if (safeName.length >= 3) {
+    orParts.push(`nombre.ilike.%${safeName}%`);
+  }
+  if (orParts.length === 0) return [];
 
   const { data, error } = await supabase
     .from('clientes')
     .select('id, nombre, telefono, equipos(tipo_equipo), ordenes(id)')
-    .or(filterExpr)
+    .or(orParts.join(','))
     .order('updated_at', { ascending: false })
     .limit(4);
 

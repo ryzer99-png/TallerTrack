@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'teleradio-static-v2';
+const CACHE_VERSION = 'teleradio-static-v3';
 
 const PRECACHE_ASSETS = [
   '/',
