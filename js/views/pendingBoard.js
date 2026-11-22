@@ -114,56 +114,50 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
           <button
             type="button"
             data-tech-filter="all"
-            class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
-              selectedTechnicianFilter === 'all'
-                ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
-                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
-            }"
+            class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${selectedTechnicianFilter === 'all'
+      ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+      : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+    }"
           >
             <span>Todos</span>
-            <span class="px-1.5 py-0.5 rounded-md text-xs font-mono ${
-              selectedTechnicianFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
-            }">${activeOrders.length}</span>
+            <span class="px-1.5 py-0.5 rounded-md text-xs font-mono ${selectedTechnicianFilter === 'all' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
+    }">${activeOrders.length}</span>
           </button>
 
           <button
             type="button"
             data-tech-filter="unassigned"
-            class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
-              selectedTechnicianFilter === 'unassigned'
-                ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
-                : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
-            }"
+            class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${selectedTechnicianFilter === 'unassigned'
+      ? 'bg-amber-600 text-white border-amber-700 shadow-sm'
+      : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
+    }"
           >
             <span>Sin Asignar</span>
-            <span class="px-1.5 py-0.5 rounded-md text-xs font-mono ${
-              selectedTechnicianFilter === 'unassigned' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
-            }">${countForFilter(null)}</span>
+            <span class="px-1.5 py-0.5 rounded-md text-xs font-mono ${selectedTechnicianFilter === 'unassigned' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-800'
+    }">${countForFilter(null)}</span>
           </button>
 
           ${technicians
-            .map((t) => {
-              const active = String(selectedTechnicianFilter) === String(t.id);
-              const count = countForFilter(t.id);
-              return `
+      .map((t) => {
+        const active = String(selectedTechnicianFilter) === String(t.id);
+        const count = countForFilter(t.id);
+        return `
                 <button
                   type="button"
                   data-tech-filter="${escapeHtml(t.id)}"
-                  class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${
-                    active
-                      ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
-                      : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300'
-                  }"
+                  class="touch-chip snap-start shrink-0 px-3.5 py-2 rounded-xl border font-bold text-sm inline-flex items-center gap-2 transition-colors ${active
+            ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
+            : 'bg-white text-slate-800 border-slate-200 hover:border-slate-300'
+          }"
                 >
                   <span class="w-3 h-3 rounded-full shrink-0 border border-white/60" style="background-color: ${escapeHtml(t.color || '#1d4ed8')}"></span>
                   <span>${escapeHtml(t.nombre)}</span>
-                  <span class="px-1.5 py-0.5 rounded-md text-xs font-mono ${
-                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
-                  }">${count}</span>
+                  <span class="px-1.5 py-0.5 rounded-md text-xs font-mono ${active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+          }">${count}</span>
                 </button>
               `;
-            })
-            .join('')}
+      })
+      .join('')}
 
           <button
             id="add-technician-btn"
@@ -192,27 +186,27 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
       <!-- B. Tarjetas de Resumen Rápido (KPIs) -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-5">
         ${kpis
-          .map(
-            (k) => `
+      .map(
+        (k) => `
           <div class="bg-white border border-slate-200/80 border-t-4 ${k.accent} rounded-xl p-3.5 sm:p-4 shadow-sm">
             <span class="block text-[11px] sm:text-xs font-semibold uppercase text-slate-500 tracking-wider">${escapeHtml(k.label)}</span>
             <span class="text-2xl lg:text-3xl font-extrabold font-mono text-slate-800 mt-1 block">${k.value}</span>
           </div>
         `
-          )
-          .join('')}
+      )
+      .join('')}
       </div>
 
       <!-- C. Tablero de Estados (4 columnas full-width con scroll independiente en desktop) -->
-      ${
-        isLoading
-          ? '<div class="bg-white rounded-xl border border-slate-200 p-8 text-center font-bold text-slate-600">Cargando tablero del taller...</div>'
-          : `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
-              ${BOARD_COLUMNS.map((col) => {
-                const colOrders = filteredOrders.filter((o) =>
-                  col.estados ? col.estados.includes(o.estado) : o.estado === col.estado
-                );
-                return `
+      ${isLoading
+      ? '<div class="bg-white rounded-xl border border-slate-200 p-8 text-center font-bold text-slate-600">Cargando tablero del taller...</div>'
+          : `< div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start" >
+    ${
+      BOARD_COLUMNS.map((col) => {
+        const colOrders = filteredOrders.filter((o) =>
+          col.estados ? col.estados.includes(o.estado) : o.estado === col.estado
+        );
+        return `
                   <div
                     data-drop-estado="${escapeHtml(col.estado)}"
                     class="bg-slate-100/80 rounded-xl p-3 border border-slate-200/60 flex flex-col transition-all duration-150"
@@ -225,17 +219,17 @@ export function renderPendingBoardView(container, state, { onRefreshOrders }) {
                       <span class="px-2.5 py-0.5 rounded-full bg-white border border-slate-200 text-slate-700 font-mono text-xs font-extrabold shrink-0">${colOrders.length}</span>
                     </div>
 
-                    ${
-                      colOrders.length === 0
-                        ? '<p class="text-xs font-semibold text-slate-400 text-center py-8 mt-3 border border-dashed border-slate-300/70 rounded-xl bg-white/40">Sin equipos</p>'
-                        : `<div class="lg:max-h-[calc(100vh-295px)] lg:overflow-y-auto scrollbar-thin pr-1 mt-3 space-y-2.5">
-                            ${colOrders.map((o) => renderWorkCard(o, col, technicians, techMap)).join('')}
-                          </div>`
+                    ${colOrders.length === 0
+            ? '<p class="text-xs font-semibold text-slate-400 text-center py-8 mt-3 border border-dashed border-slate-300/70 rounded-xl bg-white/40">Sin equipos</p>'
+                        : `< div class="xl:max-h-[calc(100vh-295px)] xl:overflow-y-auto scrollbar-thin pr-1 mt-3 space-y-2.5" >
+          ${ colOrders.map((o) => renderWorkCard(o, col, technicians, techMap)).join('') }
+                          </div > `
                     }
                   </div>
                 `;
-              }).join('')}
-            </div>`
+      }).join('')
+  }
+            </div > `
       }
     </section>
   `;
@@ -369,18 +363,16 @@ function renderWorkCard(order, col, technicians, techMap) {
           #${escapeHtml(order.numero_orden)}
         </span>
         <div class="flex items-center gap-1.5 flex-wrap justify-end">
-          ${
-            order.estado === 'Sin Reparación'
-              ? '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">Sin Reparación</span>'
-              : order.estado === 'Sin Falla'
-                ? '<span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-bold">Estaba Bueno</span>'
-                : ''
-          }
-          ${
-            isUrgent
-              ? '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold uppercase">⚡ Urgente</span>'
-              : ''
-          }
+          ${order.estado === 'Sin Reparación'
+      ? '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">Sin Reparación</span>'
+      : order.estado === 'Sin Falla'
+        ? '<span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-bold">Estaba Bueno</span>'
+        : ''
+    }
+          ${isUrgent
+      ? '<span class="px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold uppercase">⚡ Urgente</span>'
+      : ''
+    }
           <span class="px-2 py-0.5 rounded-md text-[11px] font-medium ${age.badgeClass}">
             ${escapeHtml(age.label)}
           </span>
@@ -408,10 +400,10 @@ function renderWorkCard(order, col, technicians, techMap) {
         >
           <option value="" ${!order.tecnico_id ? 'selected' : ''}>Sin Asignar</option>
           ${technicians
-            .map(
-              (t) => `<option value="${escapeHtml(t.id)}" ${String(order.tecnico_id) === String(t.id) ? 'selected' : ''}>${escapeHtml(t.nombre)}</option>`
-            )
-            .join('')}
+      .map(
+        (t) => `<option value="${escapeHtml(t.id)}" ${String(order.tecnico_id) === String(t.id) ? 'selected' : ''}>${escapeHtml(t.nombre)}</option>`
+      )
+      .join('')}
         </select>
       </div>
 
@@ -474,7 +466,7 @@ function openAddTechnicianModal(onRefreshOrders) {
           <span class="block text-xs font-black uppercase text-slate-700 mb-2">Color identificador</span>
           <div class="flex flex-wrap gap-2.5">
             ${COLORS.map(
-              (c, idx) => `
+    (c, idx) => `
               <button
                 type="button"
                 data-tech-color-pick="${c}"
@@ -482,7 +474,7 @@ function openAddTechnicianModal(onRefreshOrders) {
                 style="background-color: ${c}"
               ></button>
             `
-            ).join('')}
+  ).join('')}
           </div>
         </div>
         <div class="flex gap-2 pt-1">
@@ -526,9 +518,8 @@ function openAddTechnicianModal(onRefreshOrders) {
       selectedColor = btn.dataset.techColorPick;
       modalRoot.querySelectorAll('[data-tech-color-pick]').forEach((b) => {
         const active = b.dataset.techColorPick === selectedColor;
-        b.className = `w-10 h-10 rounded-full border-2 transition-transform ${
-          active ? 'border-slate-900 scale-110' : 'border-white shadow'
-        }`;
+        b.className = `w-10 h-10 rounded-full border-2 transition-transform ${active ? 'border-slate-900 scale-110' : 'border-white shadow'
+          }`;
       });
     });
   });

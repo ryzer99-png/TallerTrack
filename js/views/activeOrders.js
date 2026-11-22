@@ -255,16 +255,15 @@ function renderOrderCard(order, techMap) {
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          ${
-            tech
-              ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-300 text-xs font-extrabold text-slate-800">
+          ${tech
+      ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 border border-slate-300 text-xs font-extrabold text-slate-800">
                   <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${escapeHtml(tech.color || '#1d4ed8')}"></span>
                   ${escapeHtml(tech.nombre)}
                 </span>`
-              : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-500">
+      : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-500">
                   Sin asignar
                 </span>`
-          }
+    }
           <span class="px-3 py-1.5 rounded-xl border-2 text-xs sm:text-sm font-black ${meta.badgeClass}">
             ${escapeHtml(meta.label)}
           </span>
@@ -297,7 +296,7 @@ function renderOrderCard(order, techMap) {
         <span class="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
           Cambiar estado (1 toque):
         </span>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           ${QUICK_STATUS_BUTTONS.map((btn) => {
       const isCurrent = order.estado === btn.estado;
       return `
@@ -306,59 +305,59 @@ function renderOrderCard(order, techMap) {
                 data-action="set-status"
                 data-id="${escapeHtml(order.id)}"
                 data-estado="${escapeHtml(btn.estado)}"
-                class="touch-chip px-3 py-2.5 rounded-xl border-2 font-extrabold text-sm sm:text-base text-center ${isCurrent
-          ? 'bg-blue-700 text-white border-blue-900 shadow'
-          : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
-        }"
-              >
-                ${escapeHtml(btn.label)}
+                class="touch-chip px-3 py-2.5 rounded-xl border-2 font-extrabold text-xs sm:text-sm text-center ${isCurrent
+        ? 'bg-blue-700 text-white border-blue-900 shadow'
+        : 'bg-white text-slate-900 border-slate-300 hover:border-blue-600 hover:bg-blue-50'
+    }"
+    >
+    ${ escapeHtml(btn.label)}
               </button>
             `;
-    }).join('')}
-        </div>
-      </div>
+}).join('')}
+        </div >
+      </div >
 
-      <!-- Acciones rápidas: Costo + WhatsApp + Enlace Público -->
-      <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t-2 border-slate-200">
-        <div class="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            data-action="edit-cost"
-            data-id="${escapeHtml(order.id)}"
-            class="touch-btn px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-extrabold text-sm sm:text-base"
-          >
-            💰 Precio Reparación: ${costo > 0 ? escapeHtml(formatCurrency(costo)) : 'Asignar'}
-          </button>
+      < !--Acciones rápidas: Costo + WhatsApp + Enlace Público-- >
+  <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t-2 border-slate-200">
+    <div class="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        data-action="edit-cost"
+        data-id="${escapeHtml(order.id)}"
+        class="touch-btn px-4 py-2.5 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-950 border-2 border-amber-400 font-extrabold text-sm sm:text-base"
+      >
+        💰 Precio Reparación: ${costo > 0 ? escapeHtml(formatCurrency(costo)) : 'Asignar'}
+      </button>
 
-          <button
-            type="button"
-            data-action="copy-link"
-            data-id="${escapeHtml(order.id)}"
-            class="touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm"
-          >
-            🔗 Link QR
-          </button>
+      <button
+        type="button"
+        data-action="copy-link"
+        data-id="${escapeHtml(order.id)}"
+        class="touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm"
+      >
+        🔗 Link QR
+      </button>
 
-          <a
-            href="${escapeHtml(publicUrl)}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm flex items-center"
-          >
-            👁️ Ficha
-          </a>
-        </div>
+      <a
+        href="${escapeHtml(publicUrl)}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="touch-btn px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border-2 border-slate-300 font-bold text-sm flex items-center"
+      >
+        👁️ Ficha
+      </a>
+    </div>
 
-        <a
-          href="${escapeHtml(waUrl)}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="touch-btn w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white border-2 border-emerald-800 font-black text-base flex items-center justify-center gap-2 shadow-sm"
-        >
-          <span>📲 Avisar por WhatsApp</span>
-        </a>
-      </div>
-    </article>
+    <a
+      href="${escapeHtml(waUrl)}"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="touch-btn w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white border-2 border-emerald-800 font-black text-base flex items-center justify-center gap-2 shadow-sm"
+    >
+      <span>📲 Avisar por WhatsApp</span>
+    </a>
+  </div>
+    </article >
   `;
 }
 
@@ -385,7 +384,7 @@ function openCostModal(order, onRefreshOrders) {
 
   modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-3 sm:p-4';
   modalRoot.innerHTML = `
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4">
+  < div class="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4" >
       <div class="flex items-center justify-between gap-2">
         <h3 class="text-lg sm:text-xl font-black text-slate-900">Precio de Reparación #${escapeHtml(order.numero_orden)}</h3>
         <button id="close-cost-modal" type="button" class="touch-btn min-w-[44px] px-3 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 font-black" aria-label="Cerrar">✕</button>
@@ -450,7 +449,7 @@ function openCostModal(order, onRefreshOrders) {
           Cancelar
         </button>
       </form>
-    </div>
+    </div >
   `;
 
   const closeModal = () => {
@@ -497,7 +496,7 @@ function openCostModal(order, onRefreshOrders) {
           closeModal();
           await onRefreshOrders?.();
         } catch (err) {
-          showToast(`Error: ${err.message}`, 'error');
+          showToast(`Error: ${ err.message } `, 'error');
         }
       }
 

@@ -112,7 +112,7 @@ function updateHeaderUI() {
   if (isPublic) return;
 
   const baseTabClass =
-    'touch-btn flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 min-h-[46px] sm:min-h-[42px] px-1.5 sm:px-3.5 py-1 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm transition-all duration-150';
+  'touch-btn flex-1 sm:flex-none flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 min-h-[46px] sm:min-h-[40px] px-1.5 sm:px-3 xl:px-3.5 py-1 sm:py-2 rounded-lg font-bold text-[11px] sm:text-sm whitespace-nowrap min-w-0 transition-all duration-150';
   const inactiveTabClass = `${baseTabClass} text-slate-300 hover:text-white hover:bg-slate-700/60`;
 
   navNuevaBtn.className =
