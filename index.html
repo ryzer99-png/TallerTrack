@@ -42,7 +42,7 @@
 <body class="min-h-screen text-slate-900 antialiased">
   <!-- Pantalla de bloqueo / vinculación de dispositivo -->
   <section id="auth-lock-screen"
-    class="fixed inset-0 z-[100] auth-backdrop overflow-y-auto flex items-center justify-center p-4"
+    class="fixed inset-0 z-[100] bg-slate-950 auth-backdrop overflow-y-auto flex items-center justify-center p-4"
     aria-labelledby="auth-title">
     <div
       class="auth-card-enter w-full max-w-md bg-white rounded-3xl border border-slate-200/90 shadow-2xl shadow-slate-950/60 p-6 sm:p-8 space-y-6">
@@ -72,7 +72,7 @@
           </label>
           <div class="relative flex items-center">
             <input id="auth-code-input" type="password" required autocomplete="off" autocapitalize="characters"
-              spellcheck="false" placeholder="........"
+              spellcheck="false" placeholder=""
               class="w-full min-h-[48px] pl-4 pr-20 py-2.5 text-base font-mono font-bold tracking-wider rounded-xl border-2 border-slate-300 bg-slate-50/70 text-slate-900 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-150" />
             <button id="auth-toggle-visibility" type="button" aria-pressed="false"
               class="absolute right-2 px-2.5 py-1.5 rounded-lg text-xs font-extrabold text-slate-600 hover:text-slate-900 hover:bg-slate-200/70 transition-colors">

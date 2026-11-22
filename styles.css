@@ -119,3 +119,9 @@ select {
     animation: none;
   }
 }
+
+#auth-lock-screen.hidden,
+#workshop-header.hidden,
+#app-root.hidden {
+  display: none !important;
+}

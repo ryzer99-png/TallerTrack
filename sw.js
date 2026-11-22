@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'teleradio-static-v3';
+const CACHE_VERSION = 'teleradio-static-v4';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -48,70 +48,72 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-function isDynamicRequest(request, url) {
-  if (url.pathname === '/env.js') return true;
-  if (url.hostname.endsWith('.supabase.co')) return true;
-  if (url.hostname.endsWith('.supabase.in')) return true;
-  if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/realtime/')) return true;
-  if (request.mode === 'navigate') return true;
-  return false;
-}
-
-async function networkFirst(request, { fallbackToIndex = false } = {}) {
-  try {
-    return await fetch(request);
-  } catch (err) {
-    const cached = await caches.match(request);
-    if (cached) return cached;
-    if (fallbackToIndex) {
-      const indexFallback = await caches.match('/index.html');
-      if (indexFallback) return indexFallback;
-    }
-    throw err;
-  }
-}
-
-async function staleWhileRevalidate(request) {
-  const cache = await caches.open(CACHE_VERSION);
-  const cached = await cache.match(request);
-
-  const networkPromise = fetch(request)
-    .then((response) => {
-      if (response && response.ok && response.type !== 'opaque') {
+  async function networkFirst(request, { fallbackToIndex = false, cacheResponse = false } = {}) {
+    try {
+      const response = await fetch(request);
+      if (cacheResponse && response && response.ok && response.type === 'basic') {
+        const cache = await caches.open(CACHE_VERSION);
         cache.put(request, response.clone());
       }
       return response;
-    })
-    .catch(() => null);
-
-  return cached || (await networkPromise);
-}
-
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  if (request.method !== 'GET') return;
-
-  const url = new URL(request.url);
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
-
-  // Datos dinámicos (Supabase, /env.js, navegaciones): siempre Network-First
-  if (isDynamicRequest(request, url)) {
-    event.respondWith(
-      networkFirst(request, { fallbackToIndex: request.mode === 'navigate' })
-    );
-    return;
+    } catch (err) {
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      if (fallbackToIndex) {
+        const indexFallback = await caches.match('/index.html');
+        if (indexFallback) return indexFallback;
+      }
+      throw err;
+    }
   }
 
-  // Assets estáticos locales y fuentes: Stale-While-Revalidate
-  const isSameOrigin = url.origin === self.location.origin;
-  const isStaticAsset =
-    isSameOrigin ||
-    url.hostname === 'fonts.googleapis.com' ||
-    url.hostname === 'fonts.gstatic.com' ||
-    url.hostname === 'cdn.tailwindcss.com';
+  async function staleWhileRevalidate(request) {
+    const cache = await caches.open(CACHE_VERSION);
+    const cached = await cache.match(request);
 
-  if (isStaticAsset) {
-    event.respondWith(staleWhileRevalidate(request));
+    const networkFetch = fetch(request).then((response) => {
+      if (response && response.ok && response.type === 'basic') {
+        cache.put(request, response.clone());
+      }
+      return response;
+    });
+
+    if (cached) {
+      networkFetch.catch(() => null);
+      return cached;
+    }
+
+    return networkFetch;
   }
-});
 
+  self.addEventListener('fetch', (event) => {
+    const { request } = event;
+    if (request.method !== 'GET') return;
+
+    const url = new URL(request.url);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+      // Dejar que CDNs externos (Tailwind, Google Fonts, jsdelivr, Supabase) pasen directo al navegador
+      if (url.origin !== self.location.origin) return;
+
+      // Nunca cachear credenciales ni el propio Service Worker
+      if (url.pathname === '/env.js' || url.pathname === '/sw.js') {
+        event.respondWith(networkFirst(request, { cacheResponse: false }));
+        return;
+      }
+
+      // Navegaciones HTML: Network-First con respaldo offline
+      if (request.mode === 'navigate') {
+        event.respondWith(networkFirst(request, { fallbackToIndex: true, cacheResponse: true }));
+        return;
+      }
+
+        // Iconos: Stale-While-Revalidate
+        if (url.pathname.startsWith('/icons/')) {
+          event.respondWith(staleWhileRevalidate(request));
+          return;
+        }
+
+        // Resto de assets propios (CSS, JS, manifest, HTML): Network-First para evitar desfase de versiones
+        event.respondWith(networkFirst(request, { cacheResponse: true }));
+      });

@@ -2,11 +2,11 @@
  * Cloudflare Pages Middleware:
  *   1. Restringe el tráfico público únicamente a Colombia (CO).
  *   2. Inyecta cabeceras HTTP de seguridad (CSP, HSTS, X-Frame-Options, etc.).
- *   3. Elimina CORS abierto y fuerza no-store en /env.js.
+ *   3. Elimina CORS abierto y fuerza no-store en /env.js y /sw.js.
  */
 const SECURITY_HEADERS = {
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+  "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://fonts.googleapis.com https://fonts.gstatic.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
   'X-Frame-Options': 'DENY',
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -41,13 +41,14 @@ export async function onRequest(context) {
     headers.set(key, value);
   }
 
-  if (new URL(context.request.url).pathname === '/env.js') {
-    headers.set('Cache-Control', 'no-store, max-age=0');
-  }
+    const { pathname } = new URL(context.request.url);
+    if (pathname === '/env.js' || pathname === '/sw.js') {
+      headers.set('Cache-Control', 'no-store, max-age=0');
+    }
 
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-}
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
