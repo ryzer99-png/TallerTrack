@@ -60,6 +60,7 @@ def load_config():
     for key in (
         "SUPABASE_URL",
         "SUPABASE_ANON_KEY",
+        "TELERADIO_ACCESS_KEY",
         "PUBLIC_BASE_URL",
         "PRINTER_IP",
         "PRINTER_PORT",
@@ -155,12 +156,14 @@ def build_label_zpl(order, public_base_url):
     return "\n".join(line for line in lines if line) + "\n"
 
 
-def supabase_request(url, anon_key, method="GET", body=None):
+def supabase_request(url, anon_key, method="GET", body=None, access_key=""):
     headers = {
         "apikey": anon_key,
         "Authorization": f"Bearer {anon_key}",
         "Content-Type": "application/json",
     }
+    if access_key:
+        headers["x-teleradio-key"] = access_key
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     with urllib.request.urlopen(req, timeout=10) as resp:
@@ -168,12 +171,12 @@ def supabase_request(url, anon_key, method="GET", body=None):
         return json.loads(raw) if raw else None
 
 
-def fetch_pending_orders(supabase_url, anon_key, include_test=False):
+def fetch_pending_orders(supabase_url, anon_key, include_test=False, access_key=""):
     endpoint = (
         f"{supabase_url.rstrip('/')}/rest/v1/ordenes"
         "?impresa=eq.false&order=fecha_ingreso.asc&select=*"
     )
-    rows = supabase_request(endpoint, anon_key, method="GET") or []
+    rows = supabase_request(endpoint, anon_key, method="GET", access_key=access_key) or []
     if include_test:
         return rows
     return [
@@ -181,12 +184,18 @@ def fetch_pending_orders(supabase_url, anon_key, include_test=False):
     ]
 
 
-def mark_order_printed(supabase_url, anon_key, order_id):
+def mark_order_printed(supabase_url, anon_key, order_id, access_key=""):
     endpoint = (
         f"{supabase_url.rstrip('/')}/rest/v1/ordenes"
         f"?id=eq.{urllib.parse.quote(str(order_id))}"
     )
-    supabase_request(endpoint, anon_key, method="PATCH", body={"impresa": True})
+    supabase_request(
+        endpoint,
+        anon_key,
+        method="PATCH",
+        body={"impresa": True},
+        access_key=access_key,
+    )
 
 
 def send_zpl_to_printer(zpl, args):
@@ -247,6 +256,11 @@ def main():
         default=cfg.get("PUBLIC_BASE_URL") or "https://tallertrack.pages.dev",
         help="URL base pública para el código QR",
     )
+    parser.add_argument(
+        "--access-key",
+        default=cfg.get("TELERADIO_ACCESS_KEY", ""),
+        help="Código de taller (x-teleradio-key) requerido por RLS",
+    )
     parser.add_argument("--interval", type=float, default=3.0, help="Segundos entre consultas (default 3)")
     parser.add_argument("--include-test", action="store_true", help="Incluir órdenes [Prueba visual]")
     parser.add_argument("--dry-run", action="store_true", help="Solo mostrar ZPL sin imprimir ni marcar impresa=true")
@@ -275,14 +289,22 @@ def main():
     while True:
         try:
             pending = fetch_pending_orders(
-                supabase_url, anon_key, include_test=args.include_test
+                supabase_url,
+                anon_key,
+                include_test=args.include_test,
+                access_key=args.access_key,
             )
             for order in pending:
                 num = order.get("numero_orden")
                 zpl = build_label_zpl(order, args.public_url)
                 send_zpl_to_printer(zpl, args)
                 if not args.dry_run:
-                    mark_order_printed(supabase_url, anon_key, order["id"])
+                    mark_order_printed(
+                        supabase_url,
+                        anon_key,
+                        order["id"],
+                        access_key=args.access_key,
+                    )
                 print(
                     f"[Teleradio Print] {'Simulada' if args.dry_run else 'Impresa'} orden #{num} ({order.get('cliente_nombre')})"
                 )

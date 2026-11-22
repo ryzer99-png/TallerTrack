@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'teleradio-static-v1';
+const CACHE_VERSION = 'teleradio-static-v2';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -8,6 +8,7 @@ const PRECACHE_ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/js/app.js',
+  '/js/auth.js',
   '/js/config.js',
   '/js/pwa.js',
   '/js/utils.js',

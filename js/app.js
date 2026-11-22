@@ -1,4 +1,11 @@
 import {
+  bindAuthLockForm,
+  cerrarAccesoDispositivo,
+  comprobarAutorizacion,
+  hideAuthLockScreen,
+  showAuthLockScreen,
+} from './auth.js';
+import {
   clearLocalEnvOverrides,
   getConfig,
   isSupabaseConfigured,
@@ -18,6 +25,7 @@ const state = {
   currentView: 'nueva', // 'nueva' | 'pendientes' | 'activas' | 'entregados' | 'publica'
   publicOrderId: null,
   scanOrderId: null,
+  isAuthorized: false,
   orders: [],
   technicians: [],
   selectedTechnicianFilter: 'all',
@@ -44,6 +52,7 @@ const connectionBadge = document.getElementById('connection-badge');
 const demoBanner = document.getElementById('demo-banner');
 const openConfigBtn = document.getElementById('open-config-btn');
 const openGlobalSearchBtn = document.getElementById('open-global-search-btn');
+const logoutDeviceBtn = document.getElementById('logout-device-btn');
 
 function parseRoute() {
   const { pathname, search, hash } = window.location;
@@ -275,6 +284,18 @@ function handleRouteChange() {
   state.currentView = view;
   state.publicOrderId = publicOrderId;
   state.scanOrderId = scanOrderId || null;
+
+  if (view === 'publica') {
+    hideAuthLockScreen({ showWorkshop: false });
+    renderCurrentView();
+    return;
+  }
+
+  if (!state.isAuthorized) {
+    showAuthLockScreen();
+    return;
+  }
+
   if (state.scanOrderId) {
     applyPendingScanFilter();
   }
@@ -360,10 +381,39 @@ navActivasBtn?.addEventListener('click', () => navigateTo('activas'));
 navEntregadosBtn?.addEventListener('click', () => navigateTo('entregados'));
 openConfigBtn?.addEventListener('click', openSupabaseConfigModal);
 openGlobalSearchBtn?.addEventListener('click', () => {
+  if (!state.isAuthorized) return;
   openGlobalSearchModal(state, { onNavigate: navigateTo });
 });
+logoutDeviceBtn?.addEventListener('click', () => {
+  if (
+    !window.confirm(
+      '¿Desvincular este dispositivo? Tendrás que ingresar nuevamente el código del taller para acceder.'
+    )
+  ) {
+    return;
+  }
+  cerrarAccesoDispositivo({
+    onLocked: () => {
+      if (unsubscribeRealtime) {
+        unsubscribeRealtime();
+        unsubscribeRealtime = null;
+      }
+      state.isAuthorized = false;
+      state.orders = [];
+      state.technicians = [];
+      state.realtimeStatus = 'connecting';
+      if (appRoot) appRoot.innerHTML = '';
+      showToast('Dispositivo desvinculado');
+    },
+  });
+});
 document.addEventListener('keydown', (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k' && state.currentView !== 'publica') {
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    e.key.toLowerCase() === 'k' &&
+    state.isAuthorized &&
+    state.currentView !== 'publica'
+  ) {
     e.preventDefault();
     openGlobalSearchModal(state, { onNavigate: navigateTo });
   }
@@ -371,13 +421,33 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('hashchange', handleRouteChange);
 window.addEventListener('popstate', handleRouteChange);
 
-// Arranque
-initPwa({
-  onInstalled: () => showToast('App instalada en tu dispositivo'),
-});
-handleRouteChange();
-initRealtime();
-if (state.currentView !== 'publica') {
+async function unlockWorkshop({ linkedByUrl = false, linkedManually = false } = {}) {
+  state.isAuthorized = true;
+  hideAuthLockScreen({ showWorkshop: true });
+  handleRouteChange();
+  initRealtime();
   loadOrders();
+  if (linkedByUrl || linkedManually) {
+    showToast('Dispositivo vinculado correctamente');
+  }
 }
+
+async function bootstrapApp() {
+  initPwa({
+    onInstalled: () => showToast('App instalada en tu dispositivo'),
+  });
+
+  bindAuthLockForm({ onAuthorized: unlockWorkshop });
+
+  const initialRoute = parseRoute();
+  if (initialRoute.view === 'publica') {
+    handleRouteChange();
+    return;
+  }
+
+  await comprobarAutorizacion({ onAuthorized: unlockWorkshop });
+}
+
+// Arranque
+bootstrapApp();
 

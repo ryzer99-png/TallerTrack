@@ -1,4 +1,4 @@
-import { getSupabaseClient } from './supabaseClient.js';
+import { getStoredAuthToken, getSupabaseClient } from './supabaseClient.js';
 import { isSupabaseConfigured } from './config.js';
 
 const DEMO_STORAGE_KEY = 'teleradio_demo_orders_v1';
@@ -197,6 +197,10 @@ export async function createOrder(payload) {
     return created;
   }
 
+  if (!getStoredAuthToken()) {
+    throw new Error('Dispositivo no autorizado. Vincula el equipo con el código del taller.');
+  }
+
   const { data, error } = await supabase
     .from('ordenes')
     .insert([cleanPayload])
@@ -267,6 +271,16 @@ export async function getOrderByIdOrNumber(idOrNumber) {
     );
   }
 
+  // Consulta pública sin token de taller: usar únicamente RPC segura por UUID
+  if (!getStoredAuthToken()) {
+    if (!UUID_REGEX.test(raw)) {
+      return null;
+    }
+    const { data, error } = await supabase.rpc('obtener_orden_publica', { p_id: raw });
+    if (error) throw error;
+    return data || null;
+  }
+
   if (UUID_REGEX.test(raw)) {
     const { data, error } = await supabase
       .from('ordenes')
@@ -328,7 +342,23 @@ export function subscribeToOrders({ onDataChange, onStatusChange }) {
       }
     });
 
+  // Respaldo periódico cada 15s y al volver a enfocar la pestaña (Realtime no envía cabeceras RLS personalizadas)
+  const pollIntervalId = window.setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      onDataChange?.();
+    }
+  }, 15000);
+
+  const onVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      onDataChange?.();
+    }
+  };
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
   return () => {
+    window.clearInterval(pollIntervalId);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
     supabase.removeChannel(channel);
   };
 }
