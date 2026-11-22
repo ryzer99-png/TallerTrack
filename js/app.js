@@ -190,6 +190,7 @@ function renderCurrentView() {
 
   renderNewOrderView(appRoot, {
     technicians: state.technicians,
+    getOrders: () => state.orders,
     onOrderCreated: () => {
       loadOrders();
     },

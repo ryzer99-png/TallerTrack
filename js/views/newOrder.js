@@ -2,16 +2,108 @@ import { createOrder, findReturningClients } from '../ordersService.js';
 import { escapeHtml, getPublicOrderUrl, showToast } from '../utils.js';
 import { buildReceiptWhatsAppUrl } from '../whatsapp.js';
 
-const EQUIPMENT_SUGGESTIONS = [
-  'TV LCD/LED',
-  'Equipo Sonido',
-  'Microondas',
-  'Consola',
+const DEFAULT_EQUIPMENT_SUGGESTIONS = [
+  'Linterna',
+  'TV',
   'Tarjeta Electrónica',
-  'Tarjeta Nevera',
+  'Inversor',
+  'Batería',
+  'Cabina de Sonido',
+  'Parlante',
+  'Equipo de Sonido',
   'Amplificador',
-  'Pequeño Electrodoméstico',
+  'Consola',
+  'Regulador',
+  'Ventilador',
 ];
+
+function normalizeEquipmentKey(raw) {
+  return String(raw || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+const EQUIPMENT_CATEGORY_RULES = [
+  [/\b(tv|televisor|smart\s*tv)\b/, 'TV'],
+  [/\blinterna\b/, 'Linterna'],
+  [/\binversor\b/, 'Inversor'],
+  [/\btarjeta\b/, 'Tarjeta Electrónica'],
+  [/\bcabina\b/, 'Cabina de Sonido'],
+  [/\bparlante\b/, 'Parlante'],
+  [/\bequipo(\s+de)?\s+sonido\b/, 'Equipo de Sonido'],
+  [/\bamplificador\b/, 'Amplificador'],
+  [/\bcontrol\b/, 'Control'],
+  [/\b(consola|xbox|playstation|ps[345]|nintendo)\b/, 'Consola'],
+  [/\bbateria\b/, 'Batería'],
+  [/\bregulador\b/, 'Regulador'],
+  [/\bventilador\b/, 'Ventilador'],
+  [/\bradio\b/, 'Radio'],
+  [/\bplancha\b/, 'Plancha'],
+  [/\bbascula\b/, 'Báscula'],
+  [/\bproyector\b/, 'Proyector'],
+  [/\benchapadora\b/, 'Enchapadora'],
+  [/\bsoldad/, 'Soldador'],
+  [/\bmicroondas\b/, 'Microondas'],
+];
+
+function canonicalizeEquipmentLabel(raw) {
+  const clean = String(raw || '').trim().replace(/\s+/g, ' ');
+  const key = normalizeEquipmentKey(clean);
+  if (!key) return '';
+
+  for (const [pattern, label] of EQUIPMENT_CATEGORY_RULES) {
+    if (pattern.test(key)) return label;
+  }
+
+  // Para equipos distintos a las reglas base, solo conservar nombres cortos genéricos (máx. 2 palabras y sin dígitos/tallas)
+  const words = clean.split(' ');
+  if (words.length <= 2 && clean.length <= 22 && !/\d/.test(clean)) {
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
+  return '';
+}
+
+function buildEquipmentCatalog(orders = []) {
+  const byKey = new Map();
+
+  for (const order of orders) {
+    const label = canonicalizeEquipmentLabel(order?.tipo_equipo);
+    const key = normalizeEquipmentKey(label);
+    if (!key) continue;
+
+    let entry = byKey.get(key);
+    if (!entry) {
+      entry = { key, label, count: 0, latestMs: 0 };
+      byKey.set(key, entry);
+    }
+
+    entry.count += 1;
+    const ms = Date.parse(order?.fecha_ingreso) || 0;
+    if (ms > entry.latestMs) entry.latestMs = ms;
+  }
+
+  const saved = Array.from(byKey.values()).sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    if (b.latestMs !== a.latestMs) return b.latestMs - a.latestMs;
+    return a.label.localeCompare(b.label, 'es');
+  });
+
+  const result = saved.map(({ key, label, count }) => ({ key, label, count }));
+  const seenKeys = new Set(result.map((r) => r.key));
+
+  for (const fallback of DEFAULT_EQUIPMENT_SUGGESTIONS) {
+    const key = normalizeEquipmentKey(fallback);
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      result.push({ key, label: fallback, count: 0 });
+    }
+  }
+
+  return result;
+}
 
 const ACCESSORY_OPTIONS = [
   'Sin accesorios',
@@ -48,7 +140,7 @@ function buildAccessoriesPayload(selectedTags, detailText) {
   return 'Ninguno';
 }
 
-export function renderNewOrderView(container, { technicians = [], onOrderCreated, onGoToActive }) {
+export function renderNewOrderView(container, { technicians = [], getOrders = () => [], onOrderCreated, onGoToActive }) {
   let selectedAccessories = new Set(['Sin accesorios']);
   let selectedTechnicianId = null;
   let isUrgent = false;
@@ -94,7 +186,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
               >
                 <div class="flex items-center justify-between gap-2">
                   <span class="text-[11px] font-bold uppercase tracking-wider text-blue-800">
-                    Toca para elegir o desliza →
+                    Más frecuentes en el taller
                   </span>
                   <button
                     id="close-equipment-tray-btn"
@@ -104,7 +196,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                     Ocultar
                   </button>
                 </div>
-                <div id="equipment-suggestions-list" class="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 pb-1 sm:flex-wrap sm:overflow-visible"></div>
+                <div id="equipment-suggestions-list" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
               </div>
 
               <!-- Contenedor unificado de input + píldora Rápidos -->
@@ -118,7 +210,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                   type="text"
                   required
                   autocomplete="off"
-                  placeholder="Ej: TV LCD/LED, Air Fryer Oster, Consola PS4..."
+                  placeholder="Ej: TV, Linterna, Inversor, Tarjeta Electrónica..."
                   class="w-full min-h-[48px] px-3 py-2.5 text-base sm:text-lg font-semibold text-slate-900 bg-transparent focus:outline-none"
                 />
                 <button
@@ -145,12 +237,12 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
               <label class="block text-sm font-bold text-slate-800">
                 Accesorios Recibidos
               </label>
-              <div id="accessory-chips" class="flex flex-wrap gap-2">
+              <div id="accessory-chips" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 ${ACCESSORY_OPTIONS.map((acc) => `
                   <button
                     type="button"
                     data-accessory="${escapeHtml(acc)}"
-                    class="touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5"
+                    class="touch-chip w-full px-2.5 sm:px-3 py-2 rounded-xl border font-semibold text-xs sm:text-sm text-center leading-tight flex items-center justify-center gap-1.5"
                   >
                     ${escapeHtml(acc)}
                   </button>
@@ -237,12 +329,12 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
               <label for="falla-reportada" class="block text-sm font-bold text-slate-800 mb-2">
                 Falla Reportada <span class="text-red-600">*</span>
               </label>
-              <div id="fault-chips" class="flex flex-wrap gap-2 mb-2.5">
+              <div id="fault-chips" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2.5">
                 ${FAULT_CHIPS.map((fault) => `
                   <button
                     type="button"
                     data-fault="${escapeHtml(fault)}"
-                    class="touch-chip px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-slate-700 font-semibold text-sm transition-colors duration-150"
+                    class="touch-chip w-full px-2.5 sm:px-3 py-2 rounded-xl border border-slate-200 bg-white hover:bg-blue-50 hover:border-blue-300 text-slate-700 font-semibold text-xs sm:text-sm text-center leading-tight flex items-center justify-center transition-colors duration-150"
                   >
                     + ${escapeHtml(fault)}
                   </button>
@@ -305,8 +397,8 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                     Sin Asignar
                   </button>
                   ${technicians
-                    .map(
-                      (t) => `
+      .map(
+        (t) => `
                     <button
                       type="button"
                       data-tech-id="${escapeHtml(t.id)}"
@@ -318,8 +410,8 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                       <span class="truncate">${escapeHtml(t.nombre)}</span>
                     </button>
                   `
-                    )
-                    .join('')}
+      )
+      .join('')}
                 </div>
               </div>
 
@@ -394,27 +486,29 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
 
     if (!isEquipmentTrayOpen) return;
 
-    const qLower = query.toLowerCase();
-    const matches = qLower
-      ? EQUIPMENT_SUGGESTIONS.filter((item) => item.toLowerCase().includes(qLower))
-      : EQUIPMENT_SUGGESTIONS;
-    const listToRender = matches.length > 0 ? matches : EQUIPMENT_SUGGESTIONS;
+    const catalog = buildEquipmentCatalog(getOrders());
+    const qKey = normalizeEquipmentKey(query);
+    const matches = qKey
+      ? catalog.filter((item) => item.key.includes(qKey))
+      : catalog;
+    const listToRender = (matches.length > 0 ? matches : catalog).slice(0, 12);
 
     eqSuggestionsList.innerHTML = listToRender
       .map((item) => {
-        const isExact = item.toLowerCase() === qLower;
+        const isExact = item.key === qKey;
         return `
           <button
             type="button"
-            data-eq-suggestion="${escapeHtml(item)}"
-            class="touch-chip shrink-0 px-3.5 py-2 rounded-xl border font-semibold text-sm transition-colors duration-150 ${isExact
-                ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
-                : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
-            }"
-          >
-            ${escapeHtml(item)}
-          </button>
-        `;
+            data-eq-suggestion="${escapeHtml(item.label)}"
+            class="touch-chip w-full min-h-[42px] px-2.5 py-2 rounded-xl border font-semibold text-xs sm:text-sm text-center flex items-center justify-center leading-tight transition-colors duration-150 ${isExact
+          ? 'bg-blue-700 text-white border-blue-800 shadow-sm'
+          : 'bg-slate-50 text-slate-800 border-slate-200 hover:border-blue-400 hover:bg-blue-50'
+      }"
+      >
+      ${ escapeHtml(item.label)
+  }
+          </button >
+    `;
       })
       .join('');
 
@@ -436,10 +530,10 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
       const isNone = acc === 'Sin accesorios';
       btn.className = active
         ? isNone
-          ? 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
-          : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-indigo-700 text-white border-indigo-800 shadow-sm'
-        : 'touch-chip px-3.5 py-2 rounded-xl border font-semibold text-sm text-center inline-flex items-center justify-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50';
-      btn.innerHTML = active ? `${checkIcon}${escapeHtml(acc)}` : escapeHtml(acc);
+          ? 'touch-chip w-full px-2.5 sm:px-3 py-2 rounded-xl border font-semibold text-xs sm:text-sm text-center leading-tight flex items-center justify-center gap-1.5 bg-slate-900 text-white border-slate-900 shadow-sm'
+          : 'touch-chip w-full px-2.5 sm:px-3 py-2 rounded-xl border font-semibold text-xs sm:text-sm text-center leading-tight flex items-center justify-center gap-1.5 bg-indigo-700 text-white border-indigo-800 shadow-sm'
+        : 'touch-chip w-full px-2.5 sm:px-3 py-2 rounded-xl border font-semibold text-xs sm:text-sm text-center leading-tight flex items-center justify-center gap-1.5 bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50';
+      btn.innerHTML = active ? `${ checkIcon }${ escapeHtml(acc) } ` : escapeHtml(acc);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
@@ -462,10 +556,10 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
         : 'touch-chip py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-center gap-2 border-slate-200 bg-white hover:bg-slate-50 text-slate-700';
 
       const dotHtml = techColor
-        ? `<span class="w-2.5 h-2.5 rounded-full shrink-0 ${active ? 'ring-1 ring-white/60' : ''}" style="background-color: ${escapeHtml(techColor)}"></span>`
+        ? `< span class="w-2.5 h-2.5 rounded-full shrink-0 ${active ? 'ring-1 ring-white/60' : ''}" style = "background-color: ${escapeHtml(techColor)}" ></span > `
         : '';
 
-      btn.innerHTML = `${active ? checkIcon : dotHtml}<span class="truncate">${escapeHtml(techName)}</span>`;
+      btn.innerHTML = `${ active ? checkIcon : dotHtml } <span class="truncate">${escapeHtml(techName)}</span>`;
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
 
@@ -535,10 +629,10 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
   });
 
   eqInput.addEventListener('input', () => {
-    const qLower = eqInput.value.trim().toLowerCase();
+    const qKey = normalizeEquipmentKey(eqInput.value);
     const hasMatches =
-      qLower.length > 0 &&
-      EQUIPMENT_SUGGESTIONS.some((item) => item.toLowerCase().includes(qLower));
+      qKey.length > 0 &&
+      buildEquipmentCatalog(getOrders()).some((item) => item.key.includes(qKey));
     isEquipmentTrayOpen = hasMatches;
     syncEquipmentUI();
   });
@@ -604,7 +698,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
       if (!current) {
         faultInput.value = text;
       } else if (!current.toLowerCase().includes(text.toLowerCase())) {
-        faultInput.value = `${current}, ${text}`;
+        faultInput.value = `${ current }, ${ text } `;
       }
       faultInput.focus();
     });
@@ -635,16 +729,16 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
 
         returningBox.classList.remove('hidden');
         returningBox.innerHTML = `
-          <div class="flex items-center justify-between gap-2">
+    < div class="flex items-center justify-between gap-2" >
             <span class="text-[11px] font-extrabold uppercase tracking-wider text-blue-800">
               Clientes registrados (1 toque para autocompletar)
             </span>
             <button id="close-returning-box" type="button" class="min-w-[44px] min-h-[44px] flex items-center justify-center text-sm font-bold text-slate-500 hover:text-slate-800" aria-label="Cerrar sugerencias">✕</button>
-          </div>
-          <div class="flex flex-col gap-2">
-            ${matches
-              .map(
-                (c, idx) => `
+          </div >
+    <div class="flex flex-col gap-2">
+      ${matches
+        .map(
+          (c, idx) => `
               <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border border-slate-200 bg-slate-50/80">
                 <button
                   type="button"
@@ -654,13 +748,12 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                   <span class="font-bold text-sm text-slate-900 block truncate">${escapeHtml(c.nombre)}</span>
                   <span class="font-mono text-xs text-slate-600">${escapeHtml(c.telefono)} · ${c.totalOrdenes} servicio(s)</span>
                 </button>
-                ${
-                  c.equipos.length > 0
-                    ? `<div class="flex flex-wrap gap-1.5">
+                ${c.equipos.length > 0
+              ? `<div class="flex flex-wrap gap-1.5">
                         ${c.equipos
-                          .slice(0, 3)
-                          .map(
-                            (eq) => `
+                .slice(0, 3)
+                .map(
+                  (eq) => `
                           <button
                             type="button"
                             data-pick-client-eq="${idx}"
@@ -670,17 +763,17 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
                             + ${escapeHtml(eq)}
                           </button>
                         `
-                          )
-                          .join('')}
+                )
+                .join('')}
                       </div>`
-                    : ''
-                }
+              : ''
+            }
               </div>
             `
-              )
-              .join('')}
-          </div>
-        `;
+        )
+        .join('')}
+    </div>
+  `;
 
         returningBox.querySelector('#close-returning-box')?.addEventListener('click', () => {
           returningBox.classList.add('hidden');
@@ -780,7 +873,7 @@ export function renderNewOrderView(container, { technicians = [], onOrderCreated
       });
     } catch (err) {
       console.error('Error al registrar orden:', err);
-      showToast(`Error al guardar: ${err.message || 'Verifica Supabase'}`, 'error');
+      showToast(`Error al guardar: ${ err.message || 'Verifica Supabase' } `, 'error');
     } finally {
       isSubmitting = false;
       submitBtn.disabled = false;
@@ -799,7 +892,7 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
 
   modalRoot.className = 'fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-3 sm:p-4';
   modalRoot.innerHTML = `
-    <div class="relative bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5">
+    < div class="relative bg-white rounded-3xl border-4 border-emerald-600 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-5" >
       <button
         id="close-confirm-modal-top"
         type="button"
@@ -870,8 +963,8 @@ function showOrderConfirmationModal(order, { onCreateAnother, onGoToActive }) {
           Ver Tablero
         </button>
       </div>
-    </div>
-  `;
+    </div >
+    `;
 
   const closeModal = () => {
     modalRoot.removeEventListener('click', onBackdropClick);
