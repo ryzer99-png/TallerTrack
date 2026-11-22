@@ -17,6 +17,7 @@ import { renderPublicOrderView } from './views/publicOrder.js';
 const state = {
   currentView: 'nueva', // 'nueva' | 'pendientes' | 'activas' | 'entregados' | 'publica'
   publicOrderId: null,
+  scanOrderId: null,
   orders: [],
   technicians: [],
   selectedTechnicianFilter: 'all',
@@ -49,30 +50,35 @@ function parseRoute() {
   const params = new URLSearchParams(search);
   const queryOrderId = params.get('id') || params.get('n');
 
-  // Soporta /orden?id=..., /orden/?id=... o /?id=... (tras Pretty URLs de Cloudflare Pages)
-  if (pathname === '/orden' || pathname.startsWith('/orden/') || queryOrderId) {
-    return { view: 'publica', publicOrderId: queryOrderId };
-  }
-
+  // Enlace público para el cliente (#/orden?id=...)
   if (hash.startsWith('#/orden')) {
     const hashQuery = hash.includes('?') ? hash.split('?')[1] : '';
     const hashParams = new URLSearchParams(hashQuery);
-    return { view: 'publica', publicOrderId: hashParams.get('id') || hashParams.get('n') };
+    return {
+      view: 'publica',
+      publicOrderId: hashParams.get('id') || hashParams.get('n'),
+      scanOrderId: null,
+    };
+  }
+
+  // Escaneo de QR del taller (/orden?id=... o /?id=...): abre Órdenes buscando ese equipo
+  if (pathname === '/orden' || pathname.startsWith('/orden/') || queryOrderId) {
+    return { view: 'activas', publicOrderId: null, scanOrderId: queryOrderId };
   }
 
   if (hash === '#/activas') {
-    return { view: 'activas', publicOrderId: null };
+    return { view: 'activas', publicOrderId: null, scanOrderId: null };
   }
 
   if (hash === '#/pendientes') {
-    return { view: 'pendientes', publicOrderId: null };
+    return { view: 'pendientes', publicOrderId: null, scanOrderId: null };
   }
 
   if (hash === '#/entregados') {
-    return { view: 'entregados', publicOrderId: null };
+    return { view: 'entregados', publicOrderId: null, scanOrderId: null };
   }
 
-  return { view: 'nueva', publicOrderId: null };
+  return { view: 'nueva', publicOrderId: null, scanOrderId: null };
 }
 
 function navigateTo(view) {
@@ -83,7 +89,7 @@ function navigateTo(view) {
     nueva: '#/nueva',
   };
   const targetHash = hashMap[view] || '#/nueva';
-  if (window.location.pathname !== '/') {
+  if (window.location.pathname !== '/' || window.location.search) {
     window.history.pushState({}, '', `/${targetHash}`);
   } else {
     window.location.hash = targetHash;
@@ -198,6 +204,7 @@ async function loadOrders() {
     const [orders, technicians] = await Promise.all([listOrders(), listTechnicians()]);
     state.orders = orders;
     state.technicians = technicians;
+    applyPendingScanFilter();
   } catch (err) {
     console.error('Error cargando órdenes:', err);
     showToast(`No se pudieron cargar las órdenes: ${err.message}`, 'error');
@@ -236,10 +243,41 @@ function initRealtime() {
   });
 }
 
+function applyPendingScanFilter() {
+  if (!state.scanOrderId || state.orders.length === 0) return;
+
+  const target = String(state.scanOrderId);
+  const matched = state.orders.find(
+    (o) => String(o.id) === target || String(o.numero_orden) === target
+  );
+  state.scanOrderId = null;
+
+  if (!matched) {
+    showToast('No se encontró la orden escaneada', 'error');
+    return;
+  }
+
+  if (matched.estado === 'Entregado') {
+    state.currentView = 'entregados';
+    state.deliveredSearchQuery = String(matched.numero_orden);
+    window.history.replaceState({}, '', '/#/entregados');
+  } else {
+    state.currentView = 'activas';
+    state.statusFilter = 'Activas';
+    state.activePage = 1;
+    state.searchQuery = String(matched.numero_orden);
+    window.history.replaceState({}, '', '/#/activas');
+  }
+}
+
 function handleRouteChange() {
-  const { view, publicOrderId } = parseRoute();
+  const { view, publicOrderId, scanOrderId } = parseRoute();
   state.currentView = view;
   state.publicOrderId = publicOrderId;
+  state.scanOrderId = scanOrderId || null;
+  if (state.scanOrderId) {
+    applyPendingScanFilter();
+  }
   renderCurrentView();
 }
 

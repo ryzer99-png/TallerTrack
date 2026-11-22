@@ -91,7 +91,7 @@ export function formatCurrency(amount) {
 
 export function getPublicOrderUrl(order) {
   const idOrNum = order?.id || order?.numero_orden;
-  return `${window.location.origin}/orden?id=${encodeURIComponent(idOrNum)}`;
+  return `${window.location.origin}/#/orden?id=${encodeURIComponent(idOrNum)}`;
 }
 
 export function getAgeMeta(isoString) {
