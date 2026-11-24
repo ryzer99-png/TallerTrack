@@ -1,5 +1,5 @@
 import { getConfig } from './config.js';
-import { formatCurrency, formatDateTime, getPublicOrderUrl } from './utils.js';
+import { formatCurrency, formatDateTime } from './utils.js';
 
 export function normalizeWhatsAppPhone(rawPhone) {
   const { DEFAULT_COUNTRY_CODE } = getConfig();
@@ -19,7 +19,6 @@ export function normalizeWhatsAppPhone(rawPhone) {
 
 export function buildReceiptWhatsAppUrl(order) {
   const phone = normalizeWhatsAppPhone(order.cliente_telefono);
-  const publicUrl = getPublicOrderUrl(order);
   const lines = [
     `*TELERADIO — COMPROBANTE DE INGRESO*`,
     `━━━━━━━━━━━━━━━━━━`,
@@ -31,8 +30,7 @@ export function buildReceiptWhatsAppUrl(order) {
     `*Falla reportada:* ${order.falla_reportada}`,
     `*Observaciones:* ${order.observaciones || 'Revisar y cotizar antes de reparar'}`,
     `━━━━━━━━━━━━━━━━━━`,
-    `Consulta el estado de tu equipo en cualquier momento aquí:`,
-    publicUrl,
+    `¡Gracias por confiar en *Teleradio*!`,
   ];
 
   const text = encodeURIComponent(lines.join('\n'));
@@ -45,7 +43,6 @@ export function buildStatusWhatsAppUrl(order) {
   }
 
   const phone = normalizeWhatsAppPhone(order.cliente_telefono);
-  const publicUrl = getPublicOrderUrl(order);
   const costo = Number(order.costo_estimado || 0);
   const estimatedText = costo > 0 ? `\n*Valor estimado:* ${formatCurrency(costo)}` : '';
   const totalText = costo > 0 ? `\n*Total a pagar:* ${formatCurrency(costo)}` : '';
@@ -73,7 +70,7 @@ export function buildStatusWhatsAppUrl(order) {
       break;
   }
 
-  const text = encodeURIComponent(`${body}\n\nDetalle de tu orden:\n${publicUrl}`);
+  const text = encodeURIComponent(body);
   return `https://wa.me/${phone}?text=${text}`;
 }
 
