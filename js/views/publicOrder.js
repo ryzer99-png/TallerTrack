@@ -1,5 +1,5 @@
 import { getConfig } from '../config.js';
-import { getOrderByIdOrNumber } from '../ordersService.js';
+import { getOrderByIdOrNumber } from '../services/ordenesService.js';
 import {
   escapeHtml,
   formatCurrency,

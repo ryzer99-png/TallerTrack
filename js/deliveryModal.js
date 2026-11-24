@@ -1,4 +1,4 @@
-import { updateOrder } from './ordersService.js';
+import { updateOrder } from './services/ordenesService.js';
 import { escapeHtml, showToast } from './utils.js';
 
 /**

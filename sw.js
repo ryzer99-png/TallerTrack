@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'teleradio-static-v5';
+const CACHE_VERSION = 'teleradio-static-v6';
 
 const PRECACHE_ASSETS = [
   '/',
@@ -8,18 +8,37 @@ const PRECACHE_ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/js/app.js',
-  '/js/auth.js',
   '/js/config.js',
+  '/js/configModal.js',
   '/js/pwa.js',
+  '/js/router.js',
   '/js/utils.js',
-  '/js/supabaseClient.js',
-  '/js/ordersService.js',
   '/js/whatsapp.js',
   '/js/deliveryModal.js',
   '/js/globalSearchModal.js',
+  '/js/domain/orden.js',
+  '/js/domain/equipos.js',
+  '/js/auth/index.js',
+  '/js/auth/authorization.js',
+  '/js/auth/lockView.js',
+  '/js/services/authStore.js',
+  '/js/services/supabaseClient.js',
+  '/js/services/ordenesService.js',
+  '/js/services/tecnicosService.js',
+  '/js/services/clientesService.js',
+  '/js/services/realtime.js',
+  '/js/services/demoStore.js',
+  '/js/services/network.js',
   '/js/views/newOrder.js',
+  '/js/views/newOrderTemplate.js',
+  '/js/views/newOrderConfirmModal.js',
+  '/js/views/returningClientBox.js',
   '/js/views/pendingBoard.js',
+  '/js/views/pendingCard.js',
+  '/js/views/addTechnicianModal.js',
   '/js/views/activeOrders.js',
+  '/js/views/activeOrderCard.js',
+  '/js/views/costModal.js',
   '/js/views/deliveredOrders.js',
   '/js/views/publicOrder.js',
 ];
@@ -38,11 +57,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== CACHE_VERSION)
-            .map((oldKey) => caches.delete(oldKey))
-        )
+        Promise.all(keys.filter((key) => key !== CACHE_VERSION).map((oldKey) => caches.delete(oldKey)))
       )
       .then(() => self.clients.claim())
   );
@@ -82,7 +97,6 @@ async function staleWhileRevalidate(request) {
     networkFetch.catch(() => null);
     return cached;
   }
-
   return networkFetch;
 }
 
@@ -92,28 +106,19 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
-
-  // Dejar que CDNs externos (Tailwind, Google Fonts, jsdelivr, Supabase) pasen directo al navegador
   if (url.origin !== self.location.origin) return;
 
-  // Nunca cachear credenciales ni el propio Service Worker
   if (url.pathname === '/env.js' || url.pathname === '/sw.js') {
     event.respondWith(networkFirst(request, { cacheResponse: false }));
     return;
   }
-
-  // Navegaciones HTML: Network-First con respaldo offline
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request, { fallbackToIndex: true, cacheResponse: true }));
     return;
   }
-
-  // Iconos: Stale-While-Revalidate
   if (url.pathname.startsWith('/icons/')) {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }
-
-  // Resto de assets propios (CSS, JS, manifest, HTML): Network-First para evitar desfase de versiones
   event.respondWith(networkFirst(request, { cacheResponse: true }));
 });
